@@ -16,6 +16,7 @@
   "homepage": "https://github.com/material-components/material-web#readme",
   "scripts": {
     "build": "wireit",
+    "build:watch": "wireit",
     "build:ts": "wireit",
     "build:css-to-ts": "wireit",
     "build:sass": "wireit",
@@ -53,6 +54,27 @@
     "build": {
       "dependencies": [
         "build:ts"
+      ]
+    },
+    "build:watch": {
+      "command": "tsc --pretty --watch",
+      "files": [
+        "tsconfig.json",
+        "**/*.ts",
+        "!**/*.d.ts",
+        "!**/*.css.ts"
+      ],
+      "output": [
+        ".tsbuildinfo",
+        "**/*.js",
+        "**/*.js.map",
+        "**/*.d.ts",
+        "!*.js",
+        "!types/"
+      ],
+      "clean": "if-file-deleted",
+      "dependencies": [
+        "build:css-to-ts"
       ]
     },
     "build:ts": {

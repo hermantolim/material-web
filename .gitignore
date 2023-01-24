@@ -8,3 +8,4 @@ node_modules
 *.d.ts
 !types/*.d.ts
 .wireit/
+.idea/
