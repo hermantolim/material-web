@@ -39,7 +39,7 @@ Icon button                   | 🟢     | 🔴    | 🔴
 Checkbox                      | 🟢     | 🟢    | 🔴
 Chips                         | 🔴     | 🔴    | 🔴
 Dialog                        | 🔴     | 🔴    | 🔴
-Divider                       | 🟢     | 🟡    | 🔴
+Divider                       | 🟢     | 🟢    | 🟡
 Elevation                     | 🟢     | 🔴    | 🔴
 Focus ring                    | 🟢     | 🔴    | 🔴
 Field                         | 🟢     | 🟢    | 🔴
@@ -49,7 +49,7 @@ Menu                          | 🟡     | 🔴    | 🔴
 Progress indicator (circular) | 🔴     | 🔴    | 🔴
 Progress indicator (linear)   | 🔴     | 🔴    | 🔴
 Radio button                  | 🟢     | 🟢    | 🔴
-Ripple                        | 🟢     | 🔴    | 🔴
+Ripple                        | 🟢     | 🟡    | 🔴
 Select                        | 🔴     | 🔴    | 🔴
 Slider                        | 🔴     | 🔴    | 🔴
 Switch                        | 🟢     | 🟢    | 🔴
