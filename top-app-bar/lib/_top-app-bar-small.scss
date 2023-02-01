@@ -1,0 +1,31 @@
+@use '../../sass/theme';
+@use '../../tokens';
+@use './shared';
+
+
+@mixin theme($tokens) {
+  $tokens: theme.validate-theme(tokens.md-comp-top-app-bar-small-values(), $tokens);
+  //$tokens: shared.set-extra-token($tokens);
+  //$tokens: shared.resolve-tokens($tokens);
+  $tokens: theme.create-theme-vars($tokens, top-app-bar-small);
+
+  @include theme.emit-theme-vars($tokens);
+}
+
+@mixin styles() {
+  $tokens: tokens.md-comp-top-app-bar-small-values();
+  //$tokens: shared.set-extra-token($tokens);
+  //$tokens: shared.resolve-tokens($tokens);
+  $tokens: theme.create-theme-vars($tokens, top-app-bar-small);
+
+  :host {
+    @each $token, $value in $tokens {
+      --_#{$token}: #{$value};
+    }
+  }
+
+  .md3-slider {
+    width: var(--_container-width);
+    height: var(--_container-height);
+  }
+}
