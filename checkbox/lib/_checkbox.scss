@@ -3,12 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-@use 'sass:math';
+// go/keep-sorted start
 @use 'sass:map';
+@use 'sass:math';
+// go/keep-sorted end
+// go/keep-sorted start
 @use '../../focus/focus-ring';
 @use '../../ripple/ripple';
 @use '../../sass/theme';
 @use '../../tokens';
+// go/keep-sorted end
 
 // Motion token values.
 $_md-sys-motion: tokens.md-sys-motion-values();
@@ -81,8 +85,8 @@ $_checkmark-bottom-left: 7px, -14px;
   .outline,
   .background {
     border-radius: inherit;
-    height: var(--_container-height);
-    width: var(--_container-width);
+    height: var(--_container-size);
+    width: var(--_container-size);
   }
 
   .outline {
@@ -173,8 +177,7 @@ $_checkmark-bottom-left: 7px, -14px;
     @include ripple.theme(
       (
         focus-color: var(--_error-focus-state-layer-color),
-        // TODO(b/262409702): add once token is added
-        // focus-opacity: var(--_error-focus-state-layer-opacity),
+        focus-opacity: var(--_error-focus-state-layer-opacity),
         hover-color: var(--_error-hover-state-layer-color),
         hover-opacity: var(--_error-hover-state-layer-opacity),
         pressed-color: var(--_error-pressed-state-layer-color),
@@ -331,7 +334,6 @@ $_checkmark-bottom-left: 7px, -14px;
 
   :host(:hover) .error .outline {
     border-color: var(--_unselected-error-hover-outline-color);
-    border-width: var(--_unselected-error-hover-outline-width);
   }
 
   :host(:hover) .error .background {
@@ -357,7 +359,6 @@ $_checkmark-bottom-left: 7px, -14px;
 
   :host(:focus-within) .error .outline {
     border-color: var(--_unselected-error-focus-outline-color);
-    border-width: var(--_unselected-error-focus-outline-width);
   }
 
   :host(:focus-within) .error .background {
@@ -383,7 +384,6 @@ $_checkmark-bottom-left: 7px, -14px;
 
   :host(:active) .error .outline {
     border-color: var(--_unselected-error-pressed-outline-color);
-    border-width: var(--_unselected-error-pressed-outline-width);
   }
 
   :host(:active) .error .background {
@@ -448,9 +448,6 @@ $_checkmark-bottom-left: 7px, -14px;
   $tokens: map.remove(
     $tokens,
     'selected-disabled-container-outline-width',
-    'selected-error-focus-outline-width',
-    'selected-error-hover-outline-width',
-    'selected-error-pressed-outline-width',
     'selected-focus-outline-width',
     'selected-hover-outline-width',
     'selected-outline-width',
