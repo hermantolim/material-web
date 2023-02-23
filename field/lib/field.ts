@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {html, LitElement, PropertyValues} from 'lit';
-import {property, queryAsync, state} from 'lit/decorators.js';
+import {html, LitElement, nothing, PropertyValues, TemplateResult} from 'lit';
+import {property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 
-import {createAnimationSignal, EASING} from '../../motion/animation.js';
+import {EASING} from '../../motion/animation.js';
 
 /**
  * A field component.
@@ -32,11 +32,9 @@ export class Field extends LitElement {
   @property({type: Boolean}) hasEnd = false;
 
   @state() private isAnimating = false;
-  private readonly labelAnimationSignal = createAnimationSignal();
-  @queryAsync('.label.floating')
-  private readonly floatingLabelEl!: Promise<HTMLElement>;
-  @queryAsync('.label.resting')
-  private readonly restingLabelEl!: Promise<HTMLElement>;
+  private labelAnimation?: Animation;
+  @query('.label.floating') private readonly floatingLabelEl!: HTMLElement|null;
+  @query('.label.resting') private readonly restingLabelEl!: HTMLElement|null;
 
   protected override update(props: PropertyValues<Field>) {
     // Client-side property updates
@@ -57,6 +55,9 @@ export class Field extends LitElement {
   }
 
   protected override render() {
+    const floatingLabel = this.renderLabel(/*isFloating*/ true);
+    const restingLabel = this.renderLabel(/*isFloating*/ false);
+    const outline = this.renderOutline?.(floatingLabel);
     const classes = {
       'disabled': this.disabled,
       'error': this.error && !this.disabled,
@@ -69,48 +70,41 @@ export class Field extends LitElement {
     };
 
     return html`
-      <span class="field ${classMap(classes)}">
-        <span class="container">
-          ${this.renderContainerContents()}
-        </span>
+      <div class="field ${classMap(classes)}">
+        <div class="container">
+          ${this.renderBackground?.()}
+          ${this.renderIndicator?.()}
+          ${outline}
+          <div class="start">
+            <slot name="start"></slot>
+          </div>
+          <div class="middle">
+            ${restingLabel}
+            ${outline ? nothing : floatingLabel}
+            <div class="content">
+              <slot></slot>
+            </div>
+          </div>
+          <div class="end">
+            <slot name="end"></slot>
+          </div>
+        </div>
 
-        <span class="supporting-text">
-          <span class="supporting-text-start">
+        <div class="supporting-text">
+          <div class="supporting-text-start">
             <slot name="supporting-text"></slot>
-          </span>
-          <span class="supporting-text-end">
+          </div>
+          <div class="supporting-text-end">
             <slot name="supporting-text-end"></slot>
-          </span>
-        </span>
-      </span>
+          </div>
+        </div>
+      </div>
     `;
   }
 
-  protected renderContainerContents() {
-    return html`
-      <span class="start">
-        <slot name="start"></slot>
-      </span>
-      <span class="middle">${this.renderMiddleContents()}</span>
-      <span class="end">
-        <slot name="end"></slot>
-      </span>
-    `;
-  }
-
-  protected renderMiddleContents() {
-    return html`
-      <span class="content"><slot></slot></span>
-    `;
-  }
-
-  protected renderFloatingLabel() {
-    return this.renderLabel(/*isFloating*/ true);
-  }
-
-  protected renderRestingLabel() {
-    return this.renderLabel(/*isFloating*/ false);
-  }
+  protected renderBackground?(): TemplateResult;
+  protected renderIndicator?(): TemplateResult;
+  protected renderOutline?(floatingLabel: TemplateResult): TemplateResult;
 
   private renderLabel(isFloating: boolean) {
     let visible: boolean;
@@ -140,7 +134,7 @@ export class Field extends LitElement {
     `;
   }
 
-  private async animateLabelIfNeeded({wasFocused, wasPopulated}: {
+  private animateLabelIfNeeded({wasFocused, wasPopulated}: {
     wasFocused?: boolean,
     wasPopulated?: boolean
   }) {
@@ -157,20 +151,13 @@ export class Field extends LitElement {
     }
 
     this.isAnimating = true;
-    const signal = this.labelAnimationSignal.start();
+    this.labelAnimation?.cancel();
 
     // Only one label is visible at a time for clearer text rendering.
     // The resting label is visible and used during animation. At the end of the
     // animation, it will either remain visible (if resting) or hide and the
     // floating label will be shown.
-    const labelEl = await this.restingLabelEl;
-    const keyframes = await this.getLabelKeyframes();
-    if (signal.aborted) {
-      // Don't animate if this animation was requested to stop while getting
-      // the label element or calculating keyframes
-      return;
-    }
-
+    //
     // We don't use forward filling because if the dimensions of the text field
     // change (leading icon removed, density changes, etc), then the animation
     // will be inaccurate.
@@ -178,24 +165,21 @@ export class Field extends LitElement {
     // Re-calculating the animation each time will prevent any visual glitches
     // from appearing.
     // TODO(b/241113345): use animation tokens
-    const animation =
-        labelEl.animate(keyframes, {duration: 150, easing: EASING.STANDARD});
+    this.labelAnimation = this.restingLabelEl?.animate(
+        this.getLabelKeyframes(), {duration: 150, easing: EASING.STANDARD});
 
-    signal.addEventListener('abort', () => {
-      // Cancel if requested (another animation starts playing).
-      animation.cancel();
-    });
-
-    animation.addEventListener('finish', () => {
+    this.labelAnimation?.addEventListener('finish', () => {
       // At the end of the animation, update the visible label.
       this.isAnimating = false;
-      this.labelAnimationSignal.finish();
     });
   }
 
-  private async getLabelKeyframes() {
-    const floatingLabelEl = await this.floatingLabelEl;
-    const restingLabelEl = await this.restingLabelEl;
+  private getLabelKeyframes() {
+    const {floatingLabelEl, restingLabelEl} = this;
+    if (!floatingLabelEl || !restingLabelEl) {
+      return [];
+    }
+
     const {
       x: floatingX,
       y: floatingY,

@@ -3,15 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// stylelint-disable selector-class-pattern --
-// Selector '.md3-*' should only be used in this project.
-
 // go/keep-sorted start
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
-@use '../../sass/resolvers';
-@use '../../sass/typography';
 @use './icon';
 @use './input';
 // go/keep-sorted end
@@ -23,36 +18,24 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  .md3-text-field {
+  .text-field {
     display: inline-flex;
     flex: 1;
   }
 
-  .md3-text-field__field {
+  .field {
     cursor: text;
     flex: 1;
-
-    .md3-text-field--disabled & {
-      cursor: default;
-    }
   }
 
-  .md3-text-field__counter {
+  .disabled .field {
+    cursor: default;
+  }
+
+  .counter {
     white-space: nowrap;
   }
 
   @include icon.styles;
   @include input.styles;
-}
-
-@function resolve-tokens($tokens) {
-  $tokens: typography.resolve-theme(
-    $tokens,
-    map.get(resolvers.$material, typography),
-    input-text,
-    label-text,
-    supporting-text
-  );
-
-  @return $tokens;
 }

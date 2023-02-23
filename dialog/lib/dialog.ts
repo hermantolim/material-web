@@ -332,8 +332,7 @@ export class Dialog extends LitElement {
     // prevent body scrolling early only when opening to avoid layout
     // shift when closing.
     if (!this.modeless && this.open) {
-      (this.constructor as typeof Dialog)
-          .setDocumentScrollingDisabled(this.open);
+      Dialog.setDocumentScrollingDisabled(this.open);
     }
     if (this.open) {
       this.contentElement.scrollTop = 0;
@@ -384,9 +383,13 @@ export class Dialog extends LitElement {
     // Compute desired transition duration.
     const duration = msFromTimeCSSValue(getComputedStyle(this).getPropertyValue(
         this.open ? OPENING_TRANSITION_PROP : CLOSING_TRANSITION_PROP));
-    await new Promise(r => {
-      setTimeout(r, duration);
-    });
+    let promise = this.updateComplete;
+    if (duration > 0) {
+      promise = new Promise((r) => {
+        setTimeout(r, duration);
+      });
+    }
+    await promise;
     this.opening = false;
     this.closing = false;
     if (!this.open && this.dialogElement.open) {
@@ -406,8 +409,7 @@ export class Dialog extends LitElement {
       await closedPromise;
       // enable scrolling late to avoid layout shift when closing
       if (!this.modeless) {
-        (this.constructor as typeof Dialog)
-            .setDocumentScrollingDisabled(this.open);
+        Dialog.setDocumentScrollingDisabled(this.open);
       }
     }
     // Focus initial element.

@@ -67,11 +67,11 @@ export class SegmentedButton extends ActionElement {
   }
 
   override beginPress({positionEvent}: BeginPressConfig) {
-    this.ripple.beginPress(positionEvent);
+    // TODO(b/261201805): connect to ripple
   }
 
   override endPress(options: EndPressConfig) {
-    this.ripple.endPress();
+    // TODO(b/261201805): connect to ripple
     super.endPress(options);
     if (!options.cancelled) {
       const event = new Event(
@@ -91,12 +91,12 @@ export class SegmentedButton extends ActionElement {
   }
 
   protected handlePointerEnter(e: PointerEvent) {
-    this.ripple.beginHover(e);
+    this.ripple.handlePointerenter(e);
   }
 
   override handlePointerLeave(e: PointerEvent) {
     super.handlePointerLeave(e);
-    this.ripple.endHover();
+    this.ripple.handlePointerleave(e);
   }
 
   protected handleFocus() {

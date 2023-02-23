@@ -129,11 +129,11 @@ export class NavigationTab extends ActionElement implements NavigationTabState {
   }
 
   override beginPress({positionEvent}: BeginPressConfig) {
-    this.ripple.beginPress(positionEvent);
+    // TODO(b/269772145): connect to ripple
   }
 
   override endPress(options: EndPressConfig) {
-    this.ripple.endPress();
+    // TODO(b/269772145): connect to ripple
     super.endPress(options);
     if (!options.cancelled) {
       this.dispatchEvent(new CustomEvent(
@@ -153,12 +153,12 @@ export class NavigationTab extends ActionElement implements NavigationTabState {
   }
 
   protected handlePointerEnter(e: PointerEvent) {
-    this.ripple.beginHover(e);
+    this.ripple.handlePointerenter(e);
   }
 
   override handlePointerLeave(e: PointerEvent) {
     super.handlePointerLeave(e);
-    this.ripple.endHover();
+    this.ripple.handlePointerleave(e);
   }
 
   protected handleFocus() {
