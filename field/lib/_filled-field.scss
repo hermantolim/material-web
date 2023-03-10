@@ -7,13 +7,13 @@
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
-@use '../../motion/animation';
 @use '../../sass/shape';
 @use '../../sass/theme';
+@use '../../tokens';
 @use './md-comp-filled-field';
 // go/keep-sorted end
 
-$_animation-duration: 150ms;
+$_md-sys-motion: tokens.md-sys-motion-values();
 
 @mixin theme($tokens) {
   $reference: md-comp-filled-field.values();
@@ -35,39 +35,24 @@ $_animation-duration: 150ms;
     }
   }
 
-  .container {
-    border-start-start-radius: var(--_container-shape-start-start);
-    border-start-end-radius: var(--_container-shape-start-end);
-    border-end-end-radius: var(--_container-shape-end-end);
-    border-end-start-radius: var(--_container-shape-end-start);
-    // If bottom corner radii are set, prevent the active indicator from
-    // overflowing.
-    overflow: hidden;
-    // Needed for negative z-index below to place background and state layer
-    // behind content.
-    z-index: 0;
+  .background,
+  .state-layer {
+    border-radius: inherit;
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+  }
 
-    // ::before is used for background color so that opacity may be changed
-    // without affecting content
-    &::before {
-      background: var(--_container-color);
-    }
+  .background {
+    background: var(--_container-color);
+  }
 
-    // ::after is used for the state layer color and opacity
-    &::after {
-      visibility: hidden;
-    }
+  .state-layer {
+    visibility: hidden;
+  }
 
-    &::before,
-    &::after {
-      border-radius: inherit;
-      content: '';
-      display: flex;
-      height: 100%;
-      position: absolute;
-      width: 100%;
-      z-index: -1;
-    }
+  .field:not(.disabled):hover .state-layer {
+    visibility: visible;
   }
 
   .label.floating {
@@ -75,23 +60,10 @@ $_animation-duration: 150ms;
     top: 0;
   }
 
-  .state-layer {
-    border-radius: inherit;
-    height: 100%;
-    position: absolute;
-    width: 100%;
-    visibility: hidden;
-    z-index: -1;
-  }
-
-  .field:not(.disabled):hover .state-layer {
-    visibility: visible;
-  }
-
   .active-indicator {
+    inset: auto 0 0 0;
     // Prevent click events on the indicator element since it has no width and
     // causes bugs when handled by the foundation for updating transform-origin.
-    inset: auto 0 0 0;
     pointer-events: none;
     position: absolute;
     width: 100%;
@@ -109,23 +81,13 @@ $_animation-duration: 150ms;
     // focused indicator
     &::after {
       opacity: 0;
-      transform: scaleX(0);
-      // The element needs to update the transform-origin style attribute in
-      // response to click events. Psuedo elements cannot have their style
-      // updated, but their transform-origin can be inherited.
-      transform-origin: inherit;
-      // Add two transitions: opacity and a delayed transform. With a non-delayed
-      // transform transition on the focus selector without an opacity transition,
-      // this will result in the indicator scaling on enter and fading on exit.
-      transition: animation.standard(opacity, $_animation-duration),
-        transform 0s ease $_animation-duration;
+      transition: opacity map.get($_md-sys-motion, 'duration-short3')
+        map.get($_md-sys-motion, 'easing-emphasized');
     }
   }
 
   .focused .active-indicator::after {
     opacity: 1;
-    transform: scaleX(1);
-    transition: animation.standard(transform, $_animation-duration);
   }
 
   .field:not(.with-start) .start {
@@ -167,7 +129,7 @@ $_animation-duration: 150ms;
     opacity: var(--_disabled-active-indicator-opacity);
   }
 
-  .disabled .container::before {
+  .disabled .background {
     background: var(--_disabled-container-color);
     opacity: var(--_disabled-container-opacity);
   }

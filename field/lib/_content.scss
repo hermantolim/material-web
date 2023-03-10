@@ -4,14 +4,16 @@
 //
 
 // go/keep-sorted start
+@use 'sass:map';
 @use 'sass:math';
 // go/keep-sorted end
 // go/keep-sorted start
-@use '../../motion/animation';
+@use '../../tokens';
 // go/keep-sorted end
 
+$_md-sys-motion: tokens.md-sys-motion-values();
 // Duration of the label animation.
-$_label-duration: 150ms;
+$_label-duration: map.get($_md-sys-motion, 'duration-short3');
 // Duration of the content's visibility animation.
 $_visible-duration: math.round(math.div($_label-duration * 5, 9));
 // Short delay when entering (focusing/populating) so that the label may move
@@ -23,7 +25,6 @@ $_enter-delay: $_label-duration - $_visible-duration;
   .middle,
   .end {
     display: flex;
-    align-items: center;
     box-sizing: border-box;
     height: 100%;
     // Relative position for absolutely positioned labels (to avoid interfering
@@ -31,12 +32,36 @@ $_enter-delay: $_label-duration - $_visible-duration;
     position: relative;
   }
 
+  .start {
+    color: var(--_leading-content-color);
+  }
+
+  .end {
+    color: var(--_trailing-content-color);
+  }
+
   .start,
   .end {
+    align-items: center;
     justify-content: center;
   }
 
+  // TODO(b/239188049): remove when layout tokens are ready
+  .with-start .start,
+  .with-end .end {
+    min-width: 48px;
+  }
+
+  .with-start .start {
+    margin-inline-end: 4px;
+  }
+
+  .with-end .end {
+    margin-inline-start: 4px;
+  }
+
   .middle {
+    align-items: stretch;
     // The container of the field aligns sections by "center". Only the middle
     // section opts in to baseline alignment.
     //
@@ -49,13 +74,16 @@ $_enter-delay: $_label-duration - $_visible-duration;
   }
 
   .content {
-    display: flex;
-    flex: 1;
-    opacity: 0;
-    transition: animation.standard(opacity, $_visible-duration);
     // Content elements provided to the field (such as <input>) may use
     // `currentColor` to inherit this property.
     color: var(--_content-color);
+    display: flex;
+    flex: 1;
+    // Content elements provided to the field (such as <input>) may inherit font
+    font: var(--_content-type);
+    opacity: 0;
+    transition: opacity $_visible-duration
+      map.get($_md-sys-motion, 'easing-emphasized');
   }
 
   .no-label .content,
@@ -65,33 +93,83 @@ $_enter-delay: $_label-duration - $_visible-duration;
     transition-delay: $_enter-delay;
   }
 
-  .disabled.no-label .content,
-  .disabled.focused .content,
-  .disabled.populated .content {
-    opacity: var(--_disabled-content-opacity);
-  }
-
   :hover .content {
     color: var(--_hover-content-color);
+  }
+
+  :hover .start {
+    color: var(--_hover-leading-content-color);
+  }
+
+  :hover .end {
+    color: var(--_hover-trailing-content-color);
   }
 
   .focused .content {
     color: var(--_focus-content-color);
   }
 
+  .focused .start {
+    color: var(--_focus-leading-content-color);
+  }
+
+  .focused .end {
+    color: var(--_focus-trailing-content-color);
+  }
+
   .disabled .content {
     color: var(--_disabled-content-color);
+  }
+
+  .disabled.no-label .content,
+  .disabled.focused .content,
+  .disabled.populated .content {
+    opacity: var(--_disabled-content-opacity);
+  }
+
+  .disabled .start {
+    color: var(--_disabled-leading-content-color);
+    opacity: var(--_disabled-leading-content-opacity);
+  }
+
+  .disabled .end {
+    color: var(--_disabled-trailing-content-color);
+    opacity: var(--_disabled-trailing-content-opacity);
   }
 
   .error .content {
     color: var(--_error-content-color);
   }
 
+  .error .start {
+    color: var(--_error-leading-content-color);
+  }
+
+  .error .end {
+    color: var(--_error-trailing-content-color);
+  }
+
   .error:hover .content {
     color: var(--_error-hover-content-color);
   }
 
+  .error:hover .start {
+    color: var(--_error-hover-leading-content-color);
+  }
+
+  .error:hover .end {
+    color: var(--_error-hover-trailing-content-color);
+  }
+
   .error.focused .content {
     color: var(--_error-focus-content-color);
+  }
+
+  .error.focused .start {
+    color: var(--_error-focus-leading-content-color);
+  }
+
+  .error.focused .end {
+    color: var(--_error-focus-trailing-content-color);
   }
 }
