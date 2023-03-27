@@ -22,7 +22,7 @@ import {ariaProperty} from '../../decorators/aria-property.js';
 import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
-import {ARIAHasPopup} from '../../types/aria.js';
+import {ARIAExpanded, ARIAHasPopup} from '../../types/aria.js';
 
 // tslint:disable-next-line:enforce-comments-on-exported-symbols
 export class IconButton extends LitElement {
@@ -46,6 +46,10 @@ export class IconButton extends LitElement {
   @property({type: String, attribute: 'data-aria-haspopup'})
   override ariaHasPopup!: ARIAHasPopup;
 
+  @ariaProperty
+  @property({type: String, attribute: 'data-aria-expanded'})
+  override ariaExpanded!: ARIAExpanded;
+
   @query('button') protected buttonElement!: HTMLElement;
 
   @queryAsync('md-ripple') protected ripple!: Promise<MdRipple|null>;
@@ -68,6 +72,7 @@ export class IconButton extends LitElement {
         class="md3-icon-button ${classMap(this.getRenderClasses())}"
         aria-label="${ifDefined(this.ariaLabel)}"
         aria-haspopup="${ifDefined(this.ariaHasPopup)}"
+        aria-expanded="${ifDefined(this.ariaExpanded)}"
         ?disabled="${this.disabled}"
         @focus="${this.handleFocus}"
         @blur="${this.handleBlur}"
@@ -87,8 +92,6 @@ export class IconButton extends LitElement {
   }
 
   protected renderIcon(): TemplateResult {
-    // Note, it's important not to render the icon property as a slot fallback
-    // to avoid any whitespace from overridding it.
     return html`<md-icon class="md3-icon-button__icon"><slot></slot></md-icon>`;
   }
 

@@ -12,17 +12,15 @@
 // go/keep-sorted start
 @use '../../sass/shape';
 @use '../../sass/theme';
-@use '../../sass/typography';
 @use '../../tokens';
 @use './shared';
 // go/keep-sorted end
 
 @mixin theme($tokens) {
   $tokens: theme.validate-theme(
-    _resolve-typography(tokens.md-comp-extended-fab-surface-values()),
-    _resolve-typography($tokens)
+    tokens.md-comp-extended-fab-surface-values(),
+    $tokens
   );
-  $tokens: shared.resolve-tokens($tokens);
   $tokens: theme.create-theme-vars($tokens, 'fab-extended');
   $tokens: shape.resolve-tokens($tokens, 'container-shape');
 
@@ -30,8 +28,7 @@
 }
 
 @mixin styles() {
-  $tokens: _resolve-typography(tokens.md-comp-extended-fab-surface-values());
-  $tokens: shared.resolve-tokens($tokens);
+  $tokens: tokens.md-comp-extended-fab-surface-values();
   $tokens: theme.create-theme-vars($tokens, 'fab-extended');
   $tokens: shape.resolve-tokens($tokens, 'container-shape');
 
@@ -73,8 +70,4 @@
       padding-inline-end: 19px;
     }
   }
-}
-
-@function _resolve-typography($tokens) {
-  @return typography.resolve-tokens($tokens, 'label-text');
 }

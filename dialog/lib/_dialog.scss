@@ -9,8 +9,8 @@
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
+@use '../../elevation/elevation';
 @use '../../sass/color';
-@use '../../sass/resolvers';
 @use '../../sass/shape';
 @use '../../sass/theme';
 @use '../../sass/var';
@@ -118,11 +118,13 @@
   md-elevation {
     position: absolute;
     inset: 0;
-    pointer-events: none;
     border-radius: inherit;
-    --md-elevation-level: var(--_container-elevation);
-    --md-elevation-surface-tine-color: var(
-      --_container-surface-tint-layer-color
+
+    @include elevation.theme(
+      (
+        level: var(--_container-elevation),
+        surface-tint: var(--_container-surface-tint-layer-color),
+      )
     );
   }
 

@@ -82,9 +82,9 @@ export class ListItemEl extends LitElement implements ListItem {
   @property({type: Number}) itemTabIndex = -1;
 
   /**
-   * Whether or not the element is in the selected visual state. When active,
-   * tabindex is set to 0, and in some list item variants (like md-list-item),
-   * focuses the underlying item.
+   * Whether or not the element is actively being interacted with by md-list.
+   * When active, tabindex is set to 0, and in some list item variants (like
+   * md-list-item), focuses the underlying item.
    */
   @property({type: Boolean, reflect: true}) active = false;
 
@@ -275,9 +275,13 @@ export class ListItemEl extends LitElement implements ListItem {
     // update or else it may cause the page to jump on first load.
     if (changed.has('active') && !this.isFirstUpdate && this.active &&
         this.focusOnSelection) {
-      this.listItemRoot.focus();
+      this.focus();
     }
 
     this.isFirstUpdate = false;
+  }
+
+  override focus() {
+    this.listItemRoot?.focus?.();
   }
 }

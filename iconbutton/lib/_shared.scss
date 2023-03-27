@@ -13,9 +13,9 @@
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
+@use '../../focus/focus-ring';
 @use '../../icon/icon';
 @use '../../sass/color';
-@use '../../sass/resolvers';
 @use '../../sass/shape';
 @use '../../sass/touch-target';
 @use '../../tokens';
@@ -26,10 +26,15 @@
     display: inline-flex;
     outline: none;
     -webkit-tap-highlight-color: transparent;
-    height: max(48px, var(--_container-size));
-    width: max(48px, var(--_container-size));
-    align-items: center;
+    height: var(--_container-size);
+    width: var(--_container-size);
     justify-content: center;
+
+    @include focus-ring.theme(
+      (
+        shape: shape.corners-to-shape-token('--_container-shape'),
+      )
+    );
   }
 
   :host([disabled]) {
@@ -48,8 +53,7 @@
     text-decoration: none;
     user-select: none;
     z-index: 0;
-    height: var(--_container-size);
-    width: var(--_container-size);
+    flex: 1;
     border-start-start-radius: var(--_container-shape-start-start);
     border-start-end-radius: var(--_container-shape-start-end);
     border-end-start-radius: var(--_container-shape-end-start);

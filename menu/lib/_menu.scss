@@ -9,11 +9,10 @@
 @use 'sass:string';
 // go/keep-sorted end
 // go/keep-sorted start
-@use '../../elevation/lib/elevation';
+@use '../../elevation/elevation';
 @use '../../focus/focus-ring';
 @use '../../list/list' as md-list;
 @use '../../list/list-item';
-@use '../../sass/resolvers';
 @use '../../sass/theme';
 @use '../../tokens';
 // go/keep-sorted end
@@ -57,6 +56,8 @@ $_custom-property-prefix: 'menu';
         shape: var(--_container-shape),
       )
     );
+
+    min-width: 300px;
   }
 
   .menu {
@@ -68,6 +69,7 @@ $_custom-property-prefix: 'menu';
     user-select: none;
     max-height: inherit;
     height: inherit;
+    min-width: inherit;
 
     &.fixed {
       position: fixed;
@@ -78,6 +80,7 @@ $_custom-property-prefix: 'menu';
       max-height: inherit;
       display: block;
       overflow: auto;
+      min-width: inherit;
     }
 
     &.has-overflow md-list {
@@ -103,17 +106,11 @@ $_custom-property-prefix: 'menu';
   md-elevation {
     position: absolute;
     inset: 0;
-    pointer-events: none;
   }
 }
 
 @function _resolve-tokens($tokens) {
-  $menu-tokens: _remove-unused-tokens($tokens);
-  @return elevation.resolve-tokens($menu-tokens, 'elevation-key');
-}
-
-// removes unused tokens
-@function _remove-unused-tokens($tokens) {
+  // removes unused tokens
   $unused-tokens: ();
   @each $token in map-keys($tokens) {
     $index: string.index($token, 'list-item');

@@ -1,0 +1,38 @@
+//
+// Copyright 2023 Google LLC
+// SPDX-License-Ide
+
+// go/keep-sorted start
+@use 'sass:map';
+// go/keep-sorted end
+// go/keep-sorted start
+@use './md-sys-color';
+@use './md-sys-shape';
+@use './md-sys-state';
+@use './md-sys-typescale';
+@use './v0_161/md-comp-outlined-segmented-button';
+// go/keep-sorted end
+
+$_default: (
+  'md-sys-color': md-sys-color.values-light(),
+  'md-sys-shape': md-sys-shape.values(),
+  'md-sys-state': md-sys-state.values(),
+  'md-sys-typescale': md-sys-typescale.values(),
+);
+
+$_unsupported-tokens: (
+  'label-text-font',
+  'label-text-line-height',
+  'label-text-size',
+  'label-text-tracking',
+  'label-text-weight'
+);
+
+@function values($deps: $_default, $exclude-hardcoded-values: false) {
+  $tokens: md-comp-outlined-segmented-button.values(
+    $deps,
+    $exclude-hardcoded-values
+  );
+  $tokens: map.remove($tokens, $_unsupported-tokens...);
+  @return $tokens;
+}
