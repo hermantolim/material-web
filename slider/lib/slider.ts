@@ -8,7 +8,7 @@ import '../../elevation/elevation.js';
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, LitElement, nothing, PropertyValues} from 'lit';
+import {html, isServer, LitElement, nothing, PropertyValues} from 'lit';
 import {property, query, queryAsync, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {styleMap} from 'lit/directives/style-map.js';
@@ -86,7 +86,7 @@ export class Slider extends LitElement {
   static formAssociated = true;
 
   @ariaProperty  // tslint:disable-line:no-new-decorators
-  @property({type: String, attribute: 'data-aria-label', noAccessor: true})
+  @property({attribute: 'data-aria-label', noAccessor: true})
   override ariaLabel!: string;
 
   /**
@@ -115,7 +115,7 @@ export class Slider extends LitElement {
    * value itself. This can be a string or string tuple when start and end
    * values are used.
    */
-  @property({type: String, converter: tupleConverter})
+  @property({converter: tupleConverter})
   valueLabel?: string|[string, string]|undefined;
 
   /**
@@ -136,8 +136,7 @@ export class Slider extends LitElement {
   /**
    * The HTML name to use in form submission.
    */
-  @property({type: String, reflect: true, converter: stringConverter})
-  name = '';
+  @property({reflect: true, converter: stringConverter}) name = '';
 
   /**
    * The associated form element with which this element's value will submit.
@@ -189,7 +188,7 @@ export class Slider extends LitElement {
 
   @state() private focusRingAShowing = false;
   @state() private focusRingBShowing = false;
-  // allows for lazy rendering of the focus ring by latchin to true when the
+  // allows for lazy rendering of the focus ring by latching to true when the
   // focus ring should be rendered.
   private focusRingARequested = false;
   private focusRingBRequested = false;
@@ -202,24 +201,22 @@ export class Slider extends LitElement {
   // interaction targets.
   @state() private handleAHover = false;
   @state() private handleBHover = false;
-  @state() private handleAPressed = false;
-  @state() private handleBPressed = false;
 
   @state() private onTopId = 'b';
   @state() private handlesOverlapping = false;
 
-  @state() private isInteracting = false;
-
   constructor() {
     super();
     this.addController(new FormController(this));
-    this.addEventListener('click', (event: MouseEvent) => {
-      if (!isActivationClick(event)) {
-        return;
-      }
-      this.focus();
-      dispatchActivationClick(this.inputB);
-    });
+    if (!isServer) {
+      this.addEventListener('click', (event: MouseEvent) => {
+        if (!isActivationClick(event)) {
+          return;
+        }
+        this.focus();
+        dispatchActivationClick(this.inputB);
+      });
+    }
   }
 
   override focus() {
@@ -287,15 +284,12 @@ export class Slider extends LitElement {
     const isFlipped = this.isFlipped();
     const containerStyles = {
       // for clipping inputs and active track.
-      '--lowerFraction': String(lowerFraction),
-      '--upperFraction': String(upperFraction),
+      '--slider-lower-fraction': String(lowerFraction),
+      '--slider-upper-fraction': String(upperFraction),
       // for generating tick marks
-      '--tickCount': String(range / step)
+      '--slider-tick-count': String(range / step),
     };
-    const containerClasses = {
-      interacting: this.isInteracting,
-      ranged: this.allowRange
-    };
+    const containerClasses = {ranged: this.allowRange};
 
     // optional label values to show in place of the value.
     const labelA = String(this.valueLabel?.[isFlipped ? 1 : 0] ?? this.valueA);
@@ -327,7 +321,6 @@ export class Slider extends LitElement {
       focusRequested: this.focusRingARequested,
       showFocus: this.focusRingAShowing,
       hover: this.handleAHover,
-      pressed: this.handleAPressed,
       label: labelA
     };
 
@@ -338,7 +331,6 @@ export class Slider extends LitElement {
       focusRequested: this.focusRingBRequested,
       showFocus: this.focusRingBShowing,
       hover: this.handleBHover,
-      pressed: this.handleBPressed,
       label: labelB
     };
 
@@ -367,10 +359,7 @@ export class Slider extends LitElement {
 
   protected renderTrack() {
     const trackClasses = {'tickMarks': this.withTickMarks};
-    return html`
-    <slot name="track">
-      <div class="track ${classMap(trackClasses)}"></div>
-    </slot>`;
+    return html`<div class="track ${classMap(trackClasses)}"></div>`;
   }
 
   protected renderFocusRing(visible: boolean) {
@@ -383,41 +372,27 @@ export class Slider extends LitElement {
       </div>`;
   }
 
-  protected renderHandle({
-    id,
-    lesser,
-    showRipple,
-    focusRequested,
-    showFocus,
-    hover,
-    pressed,
-    label
-  }: {
-    id: string,
-    lesser: boolean,
-    focusRequested: boolean,
-    showRipple: boolean,
-    showFocus: boolean,
-    hover: boolean,
-    pressed: boolean,
-    label: string
-  }) {
+  protected renderHandle(
+      {id, lesser, showRipple, focusRequested, showFocus, hover, label}: {
+        id: string,
+        lesser: boolean,
+        focusRequested: boolean,
+        showRipple: boolean,
+        showFocus: boolean,
+        hover: boolean,
+        label: string
+      }) {
     const onTop = !this.disabled && id === this.onTopId;
     const isOverlapping = !this.disabled && this.handlesOverlapping;
     return html`<div class="handle ${classMap({
       [id]: true,
       lesser,
       hover,
-      pressed,
       onTop,
       isOverlapping
     })}">
-      <slot name="handle${
-        this.allowRange ? (lesser ? 'Lesser' : 'Greater') : ''}">
-        <div class="handleNub"><md-elevation shadow></md-elevation></div>
+        <div class="handleNub"><md-elevation></md-elevation></div>
         ${when(this.withLabel, () => this.renderLabel(label))}
-
-      </slot>
       ${when(showRipple, () => this.renderRipple(id))}
       ${when(focusRequested, () => this.renderFocusRing(showFocus))}
     </div>`;
@@ -441,7 +416,6 @@ export class Slider extends LitElement {
       @focus=${this.handleFocus}
       @blur=${this.handleBlur}
       @pointerdown=${this.handleDown}
-      @pointerup=${this.handleUp}
       @pointerenter=${this.handleEnter}
       @pointermove=${this.handleMove}
       @pointerleave=${this.handleLeave}
@@ -469,7 +443,6 @@ export class Slider extends LitElement {
     return this.rippleA;
   };
 
-
   private readonly getRippleB = () => {  // bind to this
     if (!this.handleBHover) {
       return null;
@@ -486,11 +459,11 @@ export class Slider extends LitElement {
     }
     // TODO(b/269799771): improve slider ripple connection
     if (hovering) {
-      rippleEl.handlePointerenter(
-          new PointerEvent('pointerenter', {isPrimary: true, pointerId: 1}));
+      rippleEl.handlePointerenter(new PointerEvent(
+          'pointerenter', {isPrimary: true, pointerId: this.ripplePointerId}));
     } else {
-      rippleEl.handlePointerleave(
-          new PointerEvent('pointerleave', {isPrimary: true, pointerId: 1}));
+      rippleEl.handlePointerleave(new PointerEvent(
+          'pointerleave', {isPrimary: true, pointerId: this.ripplePointerId}));
     }
   }
 
@@ -515,26 +488,24 @@ export class Slider extends LitElement {
     this.focusRingBShowing = false;
   }
 
+  // used in synthetic events generated to control ripple hover state.
+  private ripplePointerId = 1;
+
   protected handleDown(e: PointerEvent) {
     pointerPress();
-    this.isInteracting = true;
+    this.ripplePointerId = e.pointerId;
     const isA = this.isEventOnA(e);
-    const isPrimaryButton = Boolean(e.buttons & 1);
     // Since handle moves to pointer on down and there may not be a move,
     // it needs to be considered hovered..
     this.handleAHover = !this.disabled && isA && Boolean(this.handleA);
-    this.handleAPressed = isPrimaryButton && this.handleAHover;
     this.handleBHover = !this.disabled && !isA && Boolean(this.handleB);
-    this.handleBPressed = isPrimaryButton && this.handleBHover;
     this.updateFocusVisible(e);
-  }
-
-  protected handleUp(e: PointerEvent) {
-    this.handleAPressed = this.handleBPressed = false;
-    // used to remove animations after interactions...
-    this.renderRoot.addEventListener('transitionend', () => {
-      this.isInteracting = false;
-    }, {once: true});
+    // Force Safari to focus input so the label stays displayed; note,
+    // Macs don't normally focus non-text type inputs.
+    const target = (e.target as HTMLElement);
+    requestAnimationFrame(() => {
+      target.focus();
+    });
   }
 
   /**
@@ -564,7 +535,6 @@ export class Slider extends LitElement {
     this.handleBHover = false;
   }
 
-
   private updateOnTop(e: Event) {
     this.onTopId = (e.target as Element).classList.contains('a') ? 'a' : 'b';
   }
@@ -575,7 +545,7 @@ export class Slider extends LitElement {
     }
     this.valueB = this.inputB.valueAsNumber;
     this.updateOnTop(e);
-    //  update value only on interaction
+    // update value only on interaction
     const lower = Math.min(this.valueA, this.valueB);
     const upper = Math.max(this.valueA, this.valueB);
     this.value = this.allowRange ? [lower, upper] : this.valueB;

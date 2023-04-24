@@ -1,6 +1,6 @@
 {
   "name": "@material/web",
-  "version": "1.0.0-pre.5",
+  "version": "1.0.0-pre.6",
   "publishConfig": {
     "access": "public"
   },
@@ -38,6 +38,7 @@
   "dependencies": {
     "@material/base": "^14.0.0",
     "lit": "^2.3.0",
+    "safevalues": "^0.4.3",
     "tslib": "^2.4.0"
   },
   "devDependencies": {

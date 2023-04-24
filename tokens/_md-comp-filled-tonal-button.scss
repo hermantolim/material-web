@@ -13,7 +13,7 @@
 @use './md-sys-shape';
 @use './md-sys-state';
 @use './md-sys-typescale';
-@use './v0_161/md-comp-filled-tonal-button';
+@use './v0_172/md-comp-filled-tonal-button';
 @use './values';
 // go/keep-sorted end
 
@@ -94,6 +94,14 @@ $_default: (
       'with-trailing-icon-spacing-trailing':
         if($exclude-hardcoded-values, null, 16px),
       // go/keep-sorted end
+    )
+  );
+
+  // TODO(b/271876162): remove when tokens compiler emits typescale tokens
+  $tokens: map.merge(
+    $tokens,
+    (
+      'label-text-type': map.get($deps, 'md-sys-typescale', 'label-large'),
     )
   );
 

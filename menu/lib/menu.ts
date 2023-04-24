@@ -22,7 +22,7 @@ import {List} from '../../list/lib/list.js';
 import {createAnimationSignal, EASING} from '../../motion/animation.js';
 import {ARIARole} from '../../types/aria.js';
 
-import {ActivateTypeaheadEvent, DeactivateTypeaheadEvent, MenuItem} from './shared.js';
+import {ActivateTypeaheadEvent, DeactivateTypeaheadEvent, isElementInSubtree, MenuItem} from './shared.js';
 import {Corner, SurfacePositionController, SurfacePositionTarget} from './surfacePositionController.js';
 import {TypeaheadController} from './typeaheadController.js';
 
@@ -73,7 +73,7 @@ export abstract class Menu extends LitElement {
   @query('md-focus-ring') protected readonly focusRing!: MdFocusRing;
 
   @ariaProperty
-  @property({type: String, attribute: 'data-aria-label', noAccessor: true})
+  @property({attribute: 'data-aria-label', noAccessor: true})
   override ariaLabel!: string;
 
   /**
@@ -132,8 +132,8 @@ export abstract class Menu extends LitElement {
    * The role of the underlying list element.
    */
   @ariaProperty
-  @property({type: String, attribute: 'data-role', noAccessor: true})
-  override role: ARIARole = 'list';
+  @property({attribute: 'data-role', noAccessor: true})
+  override role: ARIARole = 'menu';
   /**
    * The max time between the keystrokes of the typeahead menu behavior before
    * it clears the typeahead buffer.
@@ -144,19 +144,28 @@ export abstract class Menu extends LitElement {
    * The corner of the anchor which to align the menu in the standard logical
    * property style of <block>_<inline>.
    */
-  @property({type: String, attribute: 'anchor-corner'})
-  anchorCorner: Corner = 'END_START';
+  @property({attribute: 'anchor-corner'}) anchorCorner: Corner = 'END_START';
   /**
    * The corner of the menu which to align the anchor in the standard logical
    * property style of <block>_<inline>.
    */
-  @property({type: String, attribute: 'menu-corner'})
-  menuCorner: Corner = 'START_START';
+  @property({attribute: 'menu-corner'}) menuCorner: Corner = 'START_START';
   /**
-   * Keeps the user clicks outside the menu
+   * Keeps the user clicks outside the menu.
+   *
+   * NOTE: clicking outside may still cause focusout to close the menu so see
+   * `stayOpenOnFocusout`.
    */
   @property({type: Boolean, attribute: 'stay-open-on-outside-click'})
   stayOpenOnOutsideClick = false;
+  /**
+   * Keeps the menu open when focus leaves the menu's composed subtree.
+   *
+   * NOTE: Focusout behavior will stop propagation of the focusout event. Set
+   * this property to true to opt-out of menu's focuout handling altogether.
+   */
+  @property({type: Boolean, attribute: 'stay-open-on-focusout'})
+  stayOpenOnFocusout = false;
   /**
    * After closing, does not restore focus to the last focused element before
    * the menu was opened.
@@ -166,7 +175,7 @@ export abstract class Menu extends LitElement {
   /**
    * The element that should be focused by default once opened.
    */
-  @property({type: String, attribute: 'default-focus'})
+  @property({attribute: 'default-focus'})
   defaultFocus: DefaultFocusState = 'LIST_ROOT';
 
   @state() protected typeaheadActive = true;
@@ -244,10 +253,11 @@ export abstract class Menu extends LitElement {
     // tints content
     return html`
        <div
-           class="menu ${classMap(this.getSurfaceClasses())}"
-           style=${styleMap(this.menuPositionController.surfaceStyles)}>
-        ${this.renderList()}
+          class="menu ${classMap(this.getSurfaceClasses())}"
+          style=${styleMap(this.menuPositionController.surfaceStyles)}
+          @focusout=${this.handleFocusout}>
         ${this.renderElevation()}
+        ${this.renderList()}
         ${this.renderFocusRing()}
        </div>
      `;
@@ -285,7 +295,7 @@ export abstract class Menu extends LitElement {
    * Renders the elevation component.
    */
   protected renderElevation() {
-    return html`<md-elevation shadow surface></md-elevation>`;
+    return html`<md-elevation></md-elevation>`;
   }
 
   /**
@@ -301,6 +311,32 @@ export abstract class Menu extends LitElement {
       fixed: this.fixed,
       'has-overflow': this.hasOverflow,
     };
+  }
+
+  protected async handleFocusout(e: FocusEvent) {
+    if (this.stayOpenOnFocusout) {
+      return;
+    }
+
+    // Stop propagation to prevent nested menus from interfering with each other
+    e.stopPropagation();
+
+    if (e.relatedTarget) {
+      // Don't close the menu if we are switching focus between menu,
+      // md-menu-item, and md-list
+      if (isElementInSubtree(e.relatedTarget, this)) {
+        return;
+      }
+    }
+
+    const oldRestoreFocus = this.skipRestoreFocus;
+    // allow focus to continue to the next focused object rather than returning
+    this.skipRestoreFocus = true;
+    this.close();
+    // await for close
+    await this.updateComplete;
+    // return to previous behavior
+    this.skipRestoreFocus = oldRestoreFocus;
   }
 
   protected handleListFocus() {
@@ -628,6 +664,7 @@ export abstract class Menu extends LitElement {
     const items = this.items;
     for (const item of items) {
       item.active = false;
+      item.selected = false;
     }
   }
 

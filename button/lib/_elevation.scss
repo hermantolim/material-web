@@ -7,23 +7,27 @@
 // Selector '.md3-*' should only be used in this project.
 
 // go/keep-sorted start
-@use '../../elevation/elevation';
+@use 'sass:map';
 // go/keep-sorted end
+// go/keep-sorted start
+@use '../../elevation/elevation';
+@use '../../tokens';
+// go/keep-sorted end
+
+$_md-sys-motion: tokens.md-sys-motion-values();
 
 @mixin styles() {
   md-elevation {
-    inset: 0;
-    position: absolute;
+    // TODO: replace duration with animation tokens
+    transition-duration: 280ms;
+    transition-timing-function: map.get($_md-sys-motion, 'emphasized-easing');
   }
 
   .md3-button {
     @include elevation.theme(
       (
-        // TODO: replace duration with animation tokens
-        duration: 280ms,
-        level: var(--_container-elevation),
-        shadow-color: var(--_container-shadow-color),
-        surface-tint: var(--_container-surface-tint-layer-color)
+        'level': var(--_container-elevation),
+        'shadow-color': var(--_container-shadow-color),
       )
     );
 
@@ -32,7 +36,7 @@
     &:focus {
       @include elevation.theme(
         (
-          level: var(--_focus-container-elevation),
+          'level': var(--_focus-container-elevation),
         )
       );
     }
@@ -40,7 +44,7 @@
     &:hover {
       @include elevation.theme(
         (
-          level: var(--_hover-container-elevation),
+          'level': var(--_hover-container-elevation),
         )
       );
     }
@@ -48,7 +52,7 @@
     &:active {
       @include elevation.theme(
         (
-          level: var(--_pressed-container-elevation),
+          'level': var(--_pressed-container-elevation),
         )
       );
     }
@@ -56,7 +60,7 @@
     &:disabled {
       @include elevation.theme(
         (
-          level: var(--_disabled-container-elevation),
+          'level': var(--_disabled-container-elevation),
         )
       );
     }

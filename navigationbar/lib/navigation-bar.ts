@@ -41,8 +41,8 @@ export class NavigationBar extends LitElement implements NavigationBarState {
             @keydown="${this.handleKeydown}"
             @navigation-tab-interaction="${this.handleNavigationTabInteraction}"
             @navigation-tab-rendered=${this.handleNavigationTabConnected}
-          ><md-elevation shadow surface
-          ></md-elevation><div class="md3-navigation-bar__tabs-slot-container"
+          ><md-elevation></md-elevation
+          ><div class="md3-navigation-bar__tabs-slot-container"
         ><slot></slot></div></div>`;
   }
 

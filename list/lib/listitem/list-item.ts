@@ -35,14 +35,14 @@ export type ListItem = ListItemSelf&HTMLElement;
 export class ListItemEl extends LitElement implements ListItem {
   @ariaProperty
   // tslint:disable-next-line
-  @property({type: String, attribute: 'data-role', noAccessor: true})
+  @property({attribute: 'data-role', noAccessor: true})
   // @ts-ignore(b/264292293): Use `override` with TS 4.9+
   role: ARIARole = 'listitem';
   @ariaProperty
-  @property({type: String, attribute: 'data-aria-selected', noAccessor: true})
+  @property({attribute: 'data-aria-selected', noAccessor: true})
   override ariaSelected!: 'true'|'false';
   @ariaProperty
-  @property({type: String, attribute: 'data-aria-checked', noAccessor: true})
+  @property({attribute: 'data-aria-checked', noAccessor: true})
   override ariaChecked!: 'true'|'false';
 
   /**
@@ -105,7 +105,7 @@ export class ListItemEl extends LitElement implements ListItem {
    * so that we have control over focus on specific variants such as disabling
    * focus on <md-autocomplete-item> but enabling it for <md-menu-item>.
    */
-  protected focusOnSelection = true;
+  protected focusOnActivation = true;
 
   protected getRipple = () => {
     this.showRipple = true;
@@ -119,7 +119,7 @@ export class ListItemEl extends LitElement implements ListItem {
       if (this.active) {
         this.itemTabIndex = 0;
 
-        if (this.focusOnSelection) {
+        if (this.focusOnActivation) {
           this.showFocusRing = shouldShowStrongFocus();
         }
 
@@ -274,7 +274,7 @@ export class ListItemEl extends LitElement implements ListItem {
     // will focus the list item root if it is selected but not on the first
     // update or else it may cause the page to jump on first load.
     if (changed.has('active') && !this.isFirstUpdate && this.active &&
-        this.focusOnSelection) {
+        this.focusOnActivation) {
       this.focus();
     }
 

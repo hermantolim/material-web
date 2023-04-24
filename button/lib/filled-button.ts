@@ -11,7 +11,9 @@ import {ClassInfo} from 'lit/directives/class-map.js';
 
 import {Button} from './button.js';
 
-// tslint:disable-next-line:enforce-comments-on-exported-symbols
+/**
+ * A filled button component.
+ */
 export class FilledButton extends Button {
   protected override getRenderClasses(): ClassInfo {
     return {
@@ -20,8 +22,7 @@ export class FilledButton extends Button {
     };
   }
 
-  /** @soyTemplate */
   protected override renderElevation(): TemplateResult {
-    return html`<md-elevation shadow surface></md-elevation>`;
+    return html`<md-elevation></md-elevation>`;
   }
 }

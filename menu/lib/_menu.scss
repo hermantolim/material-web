@@ -17,20 +17,16 @@
 @use '../../tokens';
 // go/keep-sorted end
 
-$_custom-property-prefix: 'menu';
+@mixin theme($tokens) {
+  $tokens: theme.validate-theme(tokens.md-comp-menu-values(), $tokens);
 
-@mixin theme($theme) {
-  $theme: theme.validate-theme(tokens.md-comp-menu-values(), $theme);
-  $theme: _resolve-tokens($theme);
-  $theme: theme.create-theme-vars($theme, $_custom-property-prefix);
-
-  @include theme.emit-theme-vars($theme);
+  @each $token, $value in $tokens {
+    --md-menu-#{$token}: #{$value};
+  }
 }
 
 @mixin styles() {
   $tokens: tokens.md-comp-menu-values();
-  $tokens: _resolve-tokens($tokens);
-  $tokens: theme.create-theme-vars($tokens, $_custom-property-prefix);
 
   :host {
     @each $token, $value in $tokens {
@@ -39,21 +35,20 @@ $_custom-property-prefix: 'menu';
 
     @include md-list.theme(
       (
-        list-item-container-color: var(--_container-color),
+        'container-color': var(--_container-color),
       )
     );
 
     @include elevation.theme(
       (
-        level: var(--_container-elevation),
-        shadow-color: var(--_container-shadow-color),
-        surface-tint: var(--_container-surface-tint-layer-color),
+        'level': var(--_container-elevation),
+        'shadow-color': var(--_container-shadow-color),
       )
     );
 
     @include focus-ring.theme(
       (
-        shape: var(--_container-shape),
+        'shape': var(--_container-shape),
       )
     );
 
@@ -81,6 +76,7 @@ $_custom-property-prefix: 'menu';
       display: block;
       overflow: auto;
       min-width: inherit;
+      border-radius: inherit;
     }
 
     &.has-overflow md-list {
@@ -102,27 +98,4 @@ $_custom-property-prefix: 'menu';
       max-height: inherit;
     }
   }
-
-  md-elevation {
-    position: absolute;
-    inset: 0;
-  }
-}
-
-@function _resolve-tokens($tokens) {
-  // removes unused tokens
-  $unused-tokens: ();
-  @each $token in map-keys($tokens) {
-    $index: string.index($token, 'list-item');
-
-    @if $index {
-      $unused-tokens: list.append($unused-tokens, $token);
-    }
-  }
-
-  @each $token in $unused-tokens {
-    $tokens: map.remove($tokens, $token);
-  }
-
-  @return $tokens;
 }

@@ -9,7 +9,7 @@
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, LitElement, TemplateResult} from 'lit';
+import {html, isServer, LitElement, TemplateResult} from 'lit';
 import {eventOptions, property, query, queryAsync, state} from 'lit/decorators.js';
 import {ClassInfo, classMap} from 'lit/directives/class-map.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
@@ -60,11 +60,11 @@ export class Switch extends LitElement {
   @property({type: Boolean}) showOnlySelectedIcon = false;
 
   @ariaProperty
-  @property({type: String, attribute: 'data-aria-label', noAccessor: true})
+  @property({attribute: 'data-aria-label', noAccessor: true})
   override ariaLabel!: string;
 
   @ariaProperty
-  @property({type: String, attribute: 'data-aria-labelledby', noAccessor: true})
+  @property({attribute: 'data-aria-labelledby', noAccessor: true})
   ariaLabelledBy = '';
 
   @state() private showFocusRing = false;
@@ -86,13 +86,13 @@ export class Switch extends LitElement {
   /**
    * The HTML name to use in form submission.
    */
-  @property({type: String, reflect: true}) name = '';
+  @property({reflect: true}) name = '';
 
   /**
    * The value associated with this switch on form submission. `null` is
    * submitted when `selected` is `false`.
    */
-  @property({type: String}) value = 'on';
+  @property() value = 'on';
 
   [getFormValue]() {
     return this.selected ? this.value : null;
@@ -101,16 +101,18 @@ export class Switch extends LitElement {
   constructor() {
     super();
     this.addController(new FormController(this));
-    this.addEventListener('click', (event: MouseEvent) => {
-      if (!isActivationClick(event)) {
-        return;
-      }
-      this.button?.focus();
-      if (this.button != null) {
-        // this triggers the click behavior, and the ripple
-        dispatchActivationClick(this.button);
-      }
-    });
+    if (!isServer) {
+      this.addEventListener('click', (event: MouseEvent) => {
+        if (!isActivationClick(event)) {
+          return;
+        }
+        this.button?.focus();
+        if (this.button != null) {
+          // this triggers the click behavior, and the ripple
+          dispatchActivationClick(this.button);
+        }
+      });
+    }
   }
 
   protected override render(): TemplateResult {
