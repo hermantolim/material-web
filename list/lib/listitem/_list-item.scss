@@ -20,7 +20,9 @@
   $tokens: theme.validate-theme(tokens.md-comp-list-item-values(), $tokens);
 
   @each $token, $value in $tokens {
-    --md-list-item-#{$token}: #{$value};
+    @if $value {
+      --md-list-item-#{$token}: #{$value};
+    }
   }
 }
 
@@ -29,7 +31,7 @@
 
   :host {
     @each $token, $value in $tokens {
-      --_#{$token}: #{$value};
+      --_#{$token}: var(--md-list-item-#{$token}, #{$value});
     }
   }
 
@@ -46,8 +48,8 @@
 
     @include focus-ring.theme(
       (
-        offset: -3px,
-        shape: map.get(tokens.md-sys-shape-values(), corner-extra-small),
+        'offset': -3px,
+        'shape': map.get(tokens.md-sys-shape-values(), 'corner-extra-small'),
       )
     );
     @include ripple.theme(
@@ -72,6 +74,8 @@
     text-decoration: none;
     background-color: var(--_list-item-container-color);
     border-radius: var(--_list-item-container-shape);
+    // hide android tap color since we have ripple
+    -webkit-tap-highlight-color: transparent;
 
     &:not(.disabled) {
       cursor: pointer;

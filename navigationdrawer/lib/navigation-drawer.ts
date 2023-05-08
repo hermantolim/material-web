@@ -6,53 +6,35 @@
 
 import '../../elevation/elevation.js';
 
-import {html, LitElement, PropertyValues, TemplateResult} from 'lit';
+import {html, LitElement, nothing, PropertyValues} from 'lit';
 import {property} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
-import {ifDefined} from 'lit/directives/if-defined.js';
 
-import {ariaProperty} from '../../decorators/aria-property.js';
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
-/** @soyCompatible */
+/**
+ * TODO(b/265346501): add docs
+ */
 export class NavigationDrawer extends LitElement {
-  /* aria properties */
-  // tslint:disable-next-line:no-new-decorators
-  @ariaProperty
-  @property({attribute: 'data-aria-describedby', noAccessor: true})
-  ariaDescribedBy: string|undefined;
+  static {
+    requestUpdateOnAriaChange(this);
+  }
 
-  // tslint:disable-next-line:no-new-decorators
-  @ariaProperty
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
-  // tslint:disable-next-line:no-new-decorators
-  @ariaProperty
-  @property({attribute: 'data-aria-modal', noAccessor: true})
-  override ariaModal: 'true'|'false' = 'false';
-
-  // tslint:disable-next-line:no-new-decorators
-  @ariaProperty
-  @property({attribute: 'data-aria-labelledby', noAccessor: true})
-  ariaLabelledBy: string|undefined;
-
-  @property({type: Boolean})  // tslint:disable-next-line:no-new-decorators
-  opened = false;
+  @property({type: Boolean}) opened = false;
   @property() pivot: 'start'|'end' = 'end';
 
-  /** @soyTemplate */
-  override render(): TemplateResult {
+  protected override render() {
     const ariaExpanded = this.opened ? 'true' : 'false';
     const ariaHidden = !this.opened ? 'true' : 'false';
-
+    // Needed for closure conformance
+    const {ariaLabel, ariaModal} = this as ARIAMixinStrict;
     return html`
       <div
-        aria-describedby="${ifDefined(this.ariaDescribedBy)}"
         aria-expanded="${ariaExpanded}"
         aria-hidden="${ariaHidden}"
-        aria-label="${ifDefined(this.ariaLabel)}"
-        aria-labelledby="${ifDefined(this.ariaLabelledBy)}"
-        aria-modal="${this.ariaModal}"
+        aria-label=${ariaLabel || nothing}
+        aria-modal="${ariaModal || nothing}"
         class="md3-navigation-drawer ${this.getRenderClasses()}"
         role="dialog">
         <md-elevation></md-elevation>
@@ -63,8 +45,7 @@ export class NavigationDrawer extends LitElement {
     `;
   }
 
-  /** @soyTemplate classMap */
-  protected getRenderClasses() {
+  private getRenderClasses() {
     return classMap({
       'md3-navigation-drawer--opened': this.opened,
       'md3-navigation-drawer--pivot-at-start': this.pivot === 'start',

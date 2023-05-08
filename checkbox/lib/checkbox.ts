@@ -7,23 +7,27 @@
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, isServer, LitElement, nothing, PropertyValues, TemplateResult} from 'lit';
+import {html, isServer, LitElement, nothing, PropertyValues} from 'lit';
 import {property, query, queryAsync, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {dispatchActivationClick, isActivationClick, redispatchEvent} from '../../controller/events.js';
 import {FormController, getFormValue} from '../../controller/form-controller.js';
 import {stringConverter} from '../../controller/string-converter.js';
-import {ariaProperty} from '../../decorators/aria-property.js';
-import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 /**
  * A checkbox component.
  */
 export class Checkbox extends LitElement {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   /**
    * @nocollapse
    */
@@ -70,16 +74,11 @@ export class Checkbox extends LitElement {
     return this.closest('form');
   }
 
-  @ariaProperty  // tslint:disable-line:no-new-decorators
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
   @state() private prevChecked = false;
   @state() private prevDisabled = false;
   @state() private prevIndeterminate = false;
   @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
   @query('input') private readonly input!: HTMLInputElement|null;
-  @state() private showFocusRing = false;
   @state() private showRipple = false;
 
   constructor() {
@@ -116,7 +115,7 @@ export class Checkbox extends LitElement {
     super.update(changed);
   }
 
-  protected override render(): TemplateResult {
+  protected override render() {
     const prevNone = !this.prevChecked && !this.prevIndeterminate;
     const prevChecked = this.prevChecked && !this.prevIndeterminate;
     const prevIndeterminate = this.prevIndeterminate;
@@ -135,11 +134,13 @@ export class Checkbox extends LitElement {
       'prev-disabled': this.prevDisabled,
     });
 
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       <div class="container ${containerClasses}">
         <div class="outline"></div>
         <div class="background"></div>
-        <md-focus-ring .visible=${this.showFocusRing}></md-focus-ring>
+        <md-focus-ring for="input"></md-focus-ring>
         ${when(this.showRipple, this.renderRipple)}
         <svg class="icon" viewBox="0 0 18 18">
           <rect class="mark short" />
@@ -147,22 +148,16 @@ export class Checkbox extends LitElement {
         </svg>
       </div>
       <input type="checkbox"
+        id="input"
         aria-checked=${isIndeterminate ? 'mixed' : nothing}
-        aria-label=${this.ariaLabel || nothing}
+        aria-label=${ariaLabel || nothing}
         ?disabled=${this.disabled}
         .indeterminate=${this.indeterminate}
         .checked=${this.checked}
-        @blur=${this.handleBlur}
         @change=${this.handleChange}
-        @focus=${this.handleFocus}
-        @pointerdown=${this.handlePointerDown}
         ${ripple(this.getRipple)}
       >
-     `;
-  }
-
-  private handleBlur() {
-    this.showFocusRing = false;
+    `;
   }
 
   private handleChange(event: Event) {
@@ -171,15 +166,6 @@ export class Checkbox extends LitElement {
     this.indeterminate = target.indeterminate;
 
     redispatchEvent(this, event);
-  }
-
-  private handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  private handlePointerDown() {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
   }
 
   private readonly getRipple = () => {  // bind to this

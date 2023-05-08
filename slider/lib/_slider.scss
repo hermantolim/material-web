@@ -11,7 +11,6 @@
 @use '../../focus/focus-ring';
 @use '../../ripple/ripple';
 @use '../../sass/color';
-@use '../../sass/shape';
 @use '../../sass/theme';
 @use '../../sass/var';
 @use '../../tokens';
@@ -130,6 +129,8 @@ $_md-sys-shape: tokens.md-sys-shape-values();
     block-size: var(--_state-layer-size);
     // note, only the native inputs are interactive.
     pointer-events: none;
+    // ensure scrolling is prevented on mobile.
+    touch-action: none;
   }
 
   .track {
@@ -276,9 +277,11 @@ $_md-sys-shape: tokens.md-sys-shape-values();
     background: var(--_hover-handle-color);
   }
 
-  input.b:active ~ .handleContainerPadded .handle.b > .handleNub,
-  input.a:active ~ .handleContainerPadded .handle.a > .handleNub {
-    background: var(--_pressed-handle-color);
+  :host(:not([disabled])) {
+    input.b:active ~ .handleContainerPadded .handle.b > .handleNub,
+    input.a:active ~ .handleContainerPadded .handle.a > .handleNub {
+      background: var(--_pressed-handle-color);
+    }
   }
 
   .onTop.isOverlapping {
@@ -449,8 +452,7 @@ $_md-sys-shape: tokens.md-sys-shape-values();
   md-focus-ring {
     @include focus-ring.theme(
       (
-        offset: -2px,
-        shape: map.get($_md-sys-shape, 'corner-full'),
+        'offset': -2px,
       )
     );
   }

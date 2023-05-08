@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// tslint:disable:no-new-decorators
-
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, isServer, LitElement, TemplateResult} from 'lit';
-import {eventOptions, property, query, queryAsync, state} from 'lit/decorators.js';
+import {html, isServer, LitElement, nothing, TemplateResult} from 'lit';
+import {property, query, queryAsync, state} from 'lit/decorators.js';
 import {ClassInfo, classMap} from 'lit/directives/class-map.js';
-import {ifDefined} from 'lit/directives/if-defined.js';
 import {when} from 'lit/directives/when.js';
 
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {dispatchActivationClick, isActivationClick} from '../../controller/events.js';
 import {FormController, getFormValue} from '../../controller/form-controller.js';
-import {ariaProperty} from '../../decorators/aria-property.js';
-import {pointerPress as focusRingPointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
 
@@ -29,6 +25,10 @@ import {MdRipple} from '../../ripple/ripple.js';
  * interaction (bubbles).
  */
 export class Switch extends LitElement {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   static override shadowRootOptions:
       ShadowRootInit = {mode: 'open', delegatesFocus: true};
 
@@ -59,15 +59,6 @@ export class Switch extends LitElement {
    */
   @property({type: Boolean}) showOnlySelectedIcon = false;
 
-  @ariaProperty
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
-  @ariaProperty
-  @property({attribute: 'data-aria-labelledby', noAccessor: true})
-  ariaLabelledBy = '';
-
-  @state() private showFocusRing = false;
   @state() private showRipple = false;
 
   // Ripple
@@ -116,9 +107,6 @@ export class Switch extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const ariaLabelValue = this.ariaLabel ? this.ariaLabel : undefined;
-    const ariaLabelledByValue =
-        this.ariaLabelledBy ? this.ariaLabelledBy : undefined;
     // NOTE: buttons must use only [phrasing
     // content](https://html.spec.whatwg.org/multipage/dom.html#phrasing-content)
     // children, which includes custom elements, but not `div`s
@@ -128,16 +116,12 @@ export class Switch extends LitElement {
         class="md3-switch ${classMap(this.getRenderClasses())}"
         role="switch"
         aria-checked="${this.selected}"
-        aria-label="${ifDefined(ariaLabelValue)}"
-        aria-labelledby="${ifDefined(ariaLabelledByValue)}"
+        aria-label=${(this as ARIAMixin).ariaLabel || nothing}
         ?disabled=${this.disabled}
         @click=${this.handleClick}
-        @focus="${this.handleFocus}"
-        @blur="${this.handleBlur}"
-        @pointerdown=${this.handlePointerDown}
         ${ripple(this.getRipple)}
       >
-        ${when(this.showFocusRing, this.renderFocusRing)}
+        <md-focus-ring></md-focus-ring>
         <span class="md3-switch__track">
           ${this.renderHandle()}
         </span>
@@ -168,12 +152,7 @@ export class Switch extends LitElement {
     return this.ripple;
   };
 
-  private readonly renderFocusRing = () => {
-    return html`<md-focus-ring visible></md-focus-ring>`;
-  };
-
-  private renderHandle(): TemplateResult {
-    /** @classMap */
+  private renderHandle() {
     const classes = {
       'md3-switch__handle--big': this.icons && !this.showOnlySelectedIcon,
     };
@@ -188,7 +167,7 @@ export class Switch extends LitElement {
     `;
   }
 
-  private renderIcons(): TemplateResult {
+  private renderIcons() {
     return html`
       <div class="md3-switch__icons">
         ${this.renderOnIcon()}
@@ -200,7 +179,7 @@ export class Switch extends LitElement {
   /**
    * https://fonts.google.com/icons?selected=Material%20Symbols%20Outlined%3Acheck%3AFILL%400%3Bwght%40500%3BGRAD%400%3Bopsz%4024
    */
-  private renderOnIcon(): TemplateResult {
+  private renderOnIcon() {
     return html`
       <svg class="md3-switch__icon md3-switch__icon--on" viewBox="0 0 24 24">
         <path d="M9.55 18.2 3.65 12.3 5.275 10.675 9.55 14.95 18.725 5.775 20.35 7.4Z"/>
@@ -211,7 +190,7 @@ export class Switch extends LitElement {
   /**
    * https://fonts.google.com/icons?selected=Material%20Symbols%20Outlined%3Aclose%3AFILL%400%3Bwght%40500%3BGRAD%400%3Bopsz%4024
    */
-  private renderOffIcon(): TemplateResult {
+  private renderOffIcon() {
     return html`
       <svg class="md3-switch__icon md3-switch__icon--off" viewBox="0 0 24 24">
         <path d="M6.4 19.2 4.8 17.6 10.4 12 4.8 6.4 6.4 4.8 12 10.4 17.6 4.8 19.2 6.4 13.6 12 19.2 17.6 17.6 19.2 12 13.6Z"/>
@@ -219,7 +198,7 @@ export class Switch extends LitElement {
     `;
   }
 
-  private renderTouchTarget(): TemplateResult {
+  private renderTouchTarget() {
     return html`<span class="md3-switch__touch"></span>`;
   }
 
@@ -238,19 +217,5 @@ export class Switch extends LitElement {
     // Bubbles but does not compose to mimic native browser <input> & <select>
     // Additionally, native change event is not an InputEvent.
     this.dispatchEvent(new Event('change', {bubbles: true}));
-  }
-
-  private handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  private handleBlur() {
-    this.showFocusRing = false;
-  }
-
-  @eventOptions({passive: true})
-  private handlePointerDown() {
-    focusRingPointerPress();
-    this.showFocusRing = false;
   }
 }

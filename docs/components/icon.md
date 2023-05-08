@@ -3,6 +3,7 @@
 <!--*
 # Document freshness: For more information, see go/fresh-source.
 freshness: { owner: 'dfreedm' reviewed: '2023-03-08' }
+tag: 'docType:reference'
 *-->
 
 <!-- go/md-icon -->
@@ -17,7 +18,7 @@ created at seven weights across three different styles.
 
 *   [Design article](https://m3.material.io/styles/icons) <!-- {.external} -->
 *   API Documentation (*coming soon*)
-*   [Source code](https://github.com/material-components/material-web/tree/master/icon)
+*   [Source code](https://github.com/material-components/material-web/tree/main/icon)
     <!-- {.external} -->
 
 ## Usage
@@ -145,7 +146,7 @@ Token                               | Default value
 `--md-icon-size`                    | `24px`
 `--md-icon-weight`                  | `400`
 
-*   [All tokens](https://github.com/material-components/material-web/blob/master/icon/lib/_md-comp-icon.scss)
+*   [All tokens](https://github.com/material-components/material-web/blob/main/icon/lib/_md-comp-icon.scss)
     <!-- {.external} -->
 
 ### Example

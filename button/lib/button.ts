@@ -9,22 +9,20 @@ import '../../ripple/ripple.js';
 
 import {html, isServer, LitElement, nothing, TemplateResult} from 'lit';
 import {property, query, queryAssignedElements, queryAsync, state} from 'lit/decorators.js';
-import {ClassInfo, classMap} from 'lit/directives/class-map.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 import {html as staticHtml, literal} from 'lit/static-html.js';
 
 import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {dispatchActivationClick, isActivationClick} from '../../controller/events.js';
-import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
-
-import {ButtonState} from './state.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 /**
  * A button component.
  */
-export abstract class Button extends LitElement implements ButtonState {
+export abstract class Button extends LitElement {
   static {
     requestUpdateOnAriaChange(this);
   }
@@ -56,14 +54,6 @@ export abstract class Button extends LitElement implements ButtonState {
    */
   @property({type: Boolean, attribute: 'trailingicon'}) trailingIcon = false;
 
-  // TODO(b/272598771): remove label property
-  /**
-   * The button's visible label.
-   *
-   * @deprecated Set text as content of the button instead.
-   */
-  @property() label = '';
-
   /**
    * Whether to display the icon or not.
    */
@@ -76,16 +66,14 @@ export abstract class Button extends LitElement implements ButtonState {
    */
   @property({type: Boolean}) preventClickDefault = false;
 
-  @query('.md3-button') protected buttonElement!: HTMLElement;
+  @query('.md3-button') private readonly buttonElement!: HTMLElement|null;
 
-  @queryAsync('md-ripple') protected ripple!: Promise<MdRipple|null>;
+  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
 
-  @state() protected showFocusRing = false;
-
-  @state() protected showRipple = false;
+  @state() private showRipple = false;
 
   @queryAssignedElements({slot: 'icon', flatten: true})
-  protected assignedIcons!: HTMLElement[];
+  private readonly assignedIcons!: HTMLElement[];
 
   constructor() {
     super();
@@ -94,44 +82,30 @@ export abstract class Button extends LitElement implements ButtonState {
     }
   }
 
-  private readonly handleActivationClick = (event: MouseEvent) => {
-    if (!isActivationClick((event))) {
-      return;
-    }
-    this.focus();
-    dispatchActivationClick(this.buttonElement);
-  };
-
   override focus() {
-    this.buttonElement.focus();
+    this.buttonElement?.focus();
   }
 
   override blur() {
-    this.buttonElement.blur();
+    this.buttonElement?.blur();
   }
 
-  protected readonly getRipple = () => {
-    this.showRipple = true;
-    return this.ripple;
-  };
-
-  protected override render(): TemplateResult {
+  protected override render() {
     // Link buttons may not be disabled
     const isDisabled = this.disabled && !this.href;
 
     const button = this.href ? literal`a` : literal`button`;
+    // Needed for closure conformance
+    const {ariaLabel, ariaHasPopup, ariaExpanded} = this as ARIAMixinStrict;
     return staticHtml`
       <${button}
         class="md3-button ${classMap(this.getRenderClasses())}"
         ?disabled=${isDisabled}
-        aria-label="${this.ariaLabel || nothing}"
-        aria-haspopup="${this.ariaHasPopup || nothing}"
-        aria-expanded="${this.ariaExpanded || nothing}"
+        aria-label="${ariaLabel || nothing}"
+        aria-haspopup="${ariaHasPopup || nothing}"
+        aria-expanded="${ariaExpanded || nothing}"
         href=${this.href || nothing}
         target=${this.target || nothing}
-        @pointerdown="${this.handlePointerDown}"
-        @focus="${this.handleFocus}"
-        @blur="${this.handleBlur}"
         @click="${this.handleClick}"
         ${ripple(this.getRipple)}
       >
@@ -146,76 +120,73 @@ export abstract class Button extends LitElement implements ButtonState {
       </${button}>`;
   }
 
-  protected getRenderClasses(): ClassInfo {
+  protected getRenderClasses() {
     return {
       'md3-button--icon-leading': !this.trailingIcon && this.hasIcon,
       'md3-button--icon-trailing': this.trailingIcon && this.hasIcon,
     };
   }
 
-  protected renderTouchTarget(): TemplateResult {
+  protected renderElevation(): TemplateResult|typeof nothing {
+    return nothing;
+  }
+
+  protected renderOutline(): TemplateResult|typeof nothing {
+    return nothing;
+  }
+
+  private renderTouchTarget() {
     return html`
       <span class="md3-button__touch"></span>
     `;
   }
 
-  protected renderElevation(): TemplateResult {
-    return html``;
-  }
+  private readonly handleActivationClick = (event: MouseEvent) => {
+    if (!isActivationClick((event)) || !this.buttonElement) {
+      return;
+    }
+    this.focus();
+    dispatchActivationClick(this.buttonElement);
+  };
 
-  protected renderRipple = () => {
+  private readonly getRipple = () => {
+    this.showRipple = true;
+    return this.ripple;
+  };
+
+  private readonly renderRipple = () => {
     return html`<md-ripple class="md3-button__ripple" ?disabled="${
         this.disabled}"></md-ripple>`;
   };
 
-  protected renderOutline(): TemplateResult {
-    return html``;
+  private renderFocusRing() {
+    return html`<md-focus-ring></md-focus-ring>`;
   }
 
-  protected renderFocusRing(): TemplateResult {
-    return html`<md-focus-ring .visible="${
-        this.showFocusRing}"></md-focus-ring>`;
+  private renderLabel() {
+    return html`<span class="md3-button__label"><slot></slot></span>`;
   }
 
-  protected renderLabel(): TemplateResult {
-    // TODO(b/272598771): remove the ternary when label property is removed
-    return html`<span class="md3-button__label">${
-        this.label ? this.label : html`<slot></slot>`}</span>`;
+  private renderLeadingIcon() {
+    return this.trailingIcon ? nothing : this.renderIcon();
   }
 
-  protected renderLeadingIcon(): TemplateResult|string {
-    return this.trailingIcon ? '' : this.renderIcon();
+  private renderTrailingIcon() {
+    return this.trailingIcon ? this.renderIcon() : nothing;
   }
 
-  protected renderTrailingIcon(): TemplateResult|string {
-    return this.trailingIcon ? this.renderIcon() : '';
-  }
-
-  protected renderIcon(): TemplateResult {
+  private renderIcon() {
     return html`<slot name="icon" @slotchange="${
         this.handleSlotChange}"></slot>`;
   }
 
-  protected handlePointerDown(e: PointerEvent) {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleClick(e: MouseEvent) {
+  private handleClick(e: MouseEvent) {
     if (this.preventClickDefault) {
       e.preventDefault();
     }
   }
 
-  protected handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleBlur() {
-    this.showFocusRing = false;
-  }
-
-  protected handleSlotChange() {
+  private handleSlotChange() {
     this.hasIcon = this.assignedIcons.length > 0;
   }
 }

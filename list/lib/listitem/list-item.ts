@@ -4,21 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Required for @ariaProperty
-// tslint:disable:no-new-decorators
-
 import '../../../ripple/ripple.js';
 import '../../../focus/focus-ring.js';
 
-import {html, LitElement, nothing, PropertyValues, TemplateResult} from 'lit';
+import {html, LitElement, nothing, PropertyValues} from 'lit';
 import {property, query, queryAsync, state} from 'lit/decorators.js';
-import {ClassInfo, classMap} from 'lit/directives/class-map.js';
+import {classMap} from 'lit/directives/class-map.js';
 
-import {ariaProperty} from '../../../decorators/aria-property.js';
-import {pointerPress, shouldShowStrongFocus} from '../../../focus/strong-focus.js';
+import {requestUpdateOnAriaChange} from '../../../aria/delegate.js';
 import {ripple} from '../../../ripple/directive.js';
 import {MdRipple} from '../../../ripple/ripple.js';
-import {ARIARole} from '../../../types/aria.js';
+import {ARIAMixinStrict, ARIARole} from '../../../types/aria.js';
 
 interface ListItemSelf {
   active: boolean;
@@ -33,17 +29,9 @@ export type ListItem = ListItemSelf&HTMLElement;
 
 // tslint:disable-next-line:enforce-comments-on-exported-symbols
 export class ListItemEl extends LitElement implements ListItem {
-  @ariaProperty
-  // tslint:disable-next-line
-  @property({attribute: 'data-role', noAccessor: true})
-  // @ts-ignore(b/264292293): Use `override` with TS 4.9+
-  role: ARIARole = 'listitem';
-  @ariaProperty
-  @property({attribute: 'data-aria-selected', noAccessor: true})
-  override ariaSelected!: 'true'|'false';
-  @ariaProperty
-  @property({attribute: 'data-aria-checked', noAccessor: true})
-  override ariaChecked!: 'true'|'false';
+  static {
+    requestUpdateOnAriaChange(this);
+  }
 
   /**
    * The primary, headline text of the list item.
@@ -94,11 +82,11 @@ export class ListItemEl extends LitElement implements ListItem {
   @property({type: Boolean, attribute: 'md-list-item', reflect: true})
   isListItem = true;
 
-  @queryAsync('md-ripple') protected ripple!: Promise<MdRipple|null>;
-  @query('.list-item') protected listItemRoot!: HTMLElement;
+  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
+  @query('.list-item') protected readonly listItemRoot!: HTMLElement|null;
+  protected readonly listItemRole: ARIARole = 'listitem';
 
-  @state() protected showFocusRing = false;
-  @state() protected showRipple = false;
+  @state() private showRipple = false;
 
   /**
    * Only meant to be overriden by subclassing and not by the user. This is
@@ -107,31 +95,26 @@ export class ListItemEl extends LitElement implements ListItem {
    */
   protected focusOnActivation = true;
 
-  protected getRipple = () => {
+  protected readonly getRipple = () => {
     this.showRipple = true;
     return this.ripple;
   };
 
   private isFirstUpdate = true;
 
-  override willUpdate(changed: PropertyValues<this>) {
+  protected override willUpdate(changed: PropertyValues<this>) {
     if (changed.has('active') && !this.disabled) {
       if (this.active) {
         this.itemTabIndex = 0;
-
-        if (this.focusOnActivation) {
-          this.showFocusRing = shouldShowStrongFocus();
-        }
-
+      } else if (!this.isFirstUpdate) {
         // Do not reset anything if it's the first render because user could
         // have set `itemTabIndex` manually.
-      } else if (!this.isFirstUpdate) {
         this.itemTabIndex = -1;
       }
     }
   }
 
-  override render(): TemplateResult {
+  protected override render() {
     return this.renderListItem(html`
       <div class="content-wrapper">
         ${this.renderStart()}
@@ -150,14 +133,12 @@ export class ListItemEl extends LitElement implements ListItem {
   protected renderListItem(content: unknown) {
     return html`
       <li
+          id="item"
           tabindex=${this.disabled ? -1 : this.itemTabIndex}
-          role=${this.role}
-          aria-selected=${this.ariaSelected || nothing}
-          aria-checked=${this.ariaChecked || nothing}
+          role=${this.listItemRole}
+          aria-selected=${(this as ARIAMixinStrict).ariaSelected || nothing}
+          aria-checked=${(this as ARIAMixinStrict).ariaChecked || nothing}
           class="list-item ${classMap(this.getRenderClasses())}"
-          @pointerdown=${this.onPointerdown}
-          @focus=${this.onFocus}
-          @blur=${this.onBlur}
           @click=${this.onClick}
           @pointerenter=${this.onPointerenter}
           @pointerleave=${this.onPointerleave}
@@ -168,7 +149,7 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * Handles rendering of the ripple element.
    */
-  protected renderRipple(): TemplateResult|typeof nothing {
+  private renderRipple() {
     return this.showRipple ?
         html`<md-ripple ?disabled="${this.disabled}"></md-ripple>` :
         nothing;
@@ -177,15 +158,14 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * Handles rendering of the focus ring.
    */
-  protected renderFocusRing(): TemplateResult {
-    return html`<md-focus-ring class="focus-ring" .visible="${
-        this.showFocusRing}"></md-focus-ring>`;
+  private renderFocusRing() {
+    return html`<md-focus-ring class="focus-ring" for="item"></md-focus-ring>`;
   }
 
   /**
    * Classes applied to the list item root.
    */
-  protected getRenderClasses(): ClassInfo {
+  protected getRenderClasses() {
     return {
       'with-one-line': this.supportingText === '',
       'with-two-line':
@@ -199,14 +179,14 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * The content rendered at the start of the list item.
    */
-  protected renderStart(): TemplateResult {
+  private renderStart() {
     return html`<div class="start"><slot name="start"></slot></div>`;
   }
 
   /**
    * Handles rendering the headline and supporting text.
    */
-  protected renderBody(): TemplateResult {
+  private renderBody() {
     const supportingText =
         this.supportingText !== '' ? this.renderSupportingText() : '';
 
@@ -217,7 +197,7 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * Renders the one-line supporting text.
    */
-  protected renderSupportingText(): TemplateResult {
+  private renderSupportingText() {
     return html`<span
         class="supporting-text ${classMap(this.getSupportingTextClasses())}"
       >${this.supportingText}</span>`;
@@ -226,14 +206,14 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * Gets the classes for the supporting text node
    */
-  protected getSupportingTextClasses(): ClassInfo {
+  private getSupportingTextClasses() {
     return {'supporting-text--multi-line': this.multiLineSupportingText};
   }
 
   /**
    * The content rendered at the end of the list item.
    */
-  protected renderEnd(): TemplateResult {
+  protected renderEnd() {
     const supportingText = this.trailingSupportingText !== '' ?
         this.renderTrailingSupportingText() :
         '';
@@ -244,31 +224,18 @@ export class ListItemEl extends LitElement implements ListItem {
   /**
    * Renders the supporting text at the end of the list item.
    */
-  protected renderTrailingSupportingText(): TemplateResult {
+  private renderTrailingSupportingText() {
     return html`<span class="trailing-supporting-text"
       >${this.trailingSupportingText}</span>`;
   }
 
-  protected onPointerdown() {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected onFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected onBlur() {
-    this.showFocusRing = false;
-  }
-
   // For easier overriding in menu-item
-  protected onClick(e: Event) {}
-  protected onKeydown(e: KeyboardEvent) {}
-  protected onPointerenter(e: Event) {}
-  protected onPointerleave(e: Event) {}
+  protected onClick?(event: Event): void;
+  protected onKeydown?(event: KeyboardEvent): void;
+  protected onPointerenter?(event: Event): void;
+  protected onPointerleave?(event: Event): void;
 
-  override updated(changed: PropertyValues<this>) {
+  protected override updated(changed: PropertyValues<this>) {
     super.updated(changed);
 
     // will focus the list item root if it is selected but not on the first

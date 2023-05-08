@@ -41,13 +41,13 @@ Chips                         | 🟡     | ❌    | ❌
 Dialog                        | ✅     | ✅    | ❌
 Divider                       | ✅     | ✅    | 🟡
 Elevation                     | ✅     | ✅    | 🟡
-Focus ring                    | ✅     | ❌    | ❌
+Focus ring                    | ✅     | ✅    | 🟡
 Field                         | ✅     | ✅    | 🟡
 Icon                          | ✅     | ✅    | ❌
 List                          | ✅     | ✅    | ❌
 Menu                          | ✅     | ✅    | ❌
-Progress indicator (circular) | ✅     | ✅    | ❌
-Progress indicator (linear)   | ✅     | ✅    | ❌
+Progress indicator (circular) | ✅     | ✅    | 🟡
+Progress indicator (linear)   | ✅     | ✅    | 🟡
 Radio button                  | ✅     | ✅    | ❌
 Ripple                        | ✅     | ✅    | 🟡
 Select                        | ✅     | ✅    | ❌

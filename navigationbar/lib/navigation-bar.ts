@@ -6,19 +6,25 @@
 
 import '../../elevation/elevation.js';
 
-import {html, LitElement, PropertyValues, TemplateResult} from 'lit';
+import {html, LitElement, nothing, PropertyValues} from 'lit';
 import {property, queryAssignedElements} from 'lit/decorators.js';
-import {ifDefined} from 'lit/directives/if-defined.js';
 
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {isRtl} from '../../controller/is-rtl.js';
-import {ariaProperty} from '../../decorators/aria-property.js';
 import {NavigationTab} from '../../navigationtab/lib/navigation-tab.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 import {NavigationTabInteractionEvent} from './constants.js';
 import {NavigationBarState} from './state.js';
 
-/** @soyCompatible */
+/**
+ * TODO(b/265346501): add docs
+ */
 export class NavigationBar extends LitElement implements NavigationBarState {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   @property({type: Number}) activeIndex = 0;
 
   @property({type: Boolean}) hideInactiveLabels = false;
@@ -26,18 +32,14 @@ export class NavigationBar extends LitElement implements NavigationBarState {
   tabs: NavigationTab[] = [];
 
   @queryAssignedElements({flatten: true})
-  protected tabsElement!: NavigationTab[];
+  private readonly tabsElement!: NavigationTab[];
 
-  // tslint:disable-next-line:no-new-decorators
-  @ariaProperty
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
-  /** @soyTemplate */
-  override render(): TemplateResult {
+  protected override render() {
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
     return html`<div class="md3-navigation-bar"
             role="tablist"
-            aria-label="${ifDefined(this.ariaLabel || undefined)}"
+            aria-label=${ariaLabel || nothing}
             @keydown="${this.handleKeydown}"
             @navigation-tab-interaction="${this.handleNavigationTabInteraction}"
             @navigation-tab-rendered=${this.handleNavigationTabConnected}

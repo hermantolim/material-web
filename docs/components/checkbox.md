@@ -3,6 +3,7 @@
 <!--*
 # Document freshness: For more information, see go/fresh-source.
 freshness: { owner: 'lizmitchell' reviewed: '2023-01-25' }
+tag: 'docType:reference'
 *-->
 
 <!-- go/md-checkbox -->
@@ -19,7 +20,7 @@ user needs to select one or more options from a list.
 
 *   [Design article](https://m3.material.io/components/checkbox) <!-- {.external} -->
 *   API Documentation (*coming soon*)
-*   [Source code](https://github.com/material-components/material-web/tree/master/checkbox)
+*   [Source code](https://github.com/material-components/material-web/tree/main/checkbox)
     <!-- {.external} -->
 
 ## Usage
@@ -80,7 +81,7 @@ Token                                    | Default value
 `--md-checkbox-selected-icon-color`      | `--md-sys-color-on-primary`
 `--md-checkbox-container-shape`          | `2px`
 
-*   [All tokens](https://github.com/material-components/material-web/blob/master/tokens/v0_160/_md-comp-checkbox.scss)
+*   [All tokens](https://github.com/material-components/material-web/blob/main/tokens/v0_160/_md-comp-checkbox.scss)
     <!-- {.external} -->
 
 ### Example

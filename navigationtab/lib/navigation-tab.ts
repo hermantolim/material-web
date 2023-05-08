@@ -8,21 +8,26 @@ import '../../badge/badge.js';
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, LitElement, PropertyValues, TemplateResult} from 'lit';
+import {html, LitElement, nothing, PropertyValues} from 'lit';
 import {property, query, queryAsync, state} from 'lit/decorators.js';
-import {ClassInfo, classMap} from 'lit/directives/class-map.js';
-import {ifDefined} from 'lit/directives/if-defined.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 
-import {ariaProperty} from '../../decorators/aria-property.js';
-import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 import {NavigationTabState} from './state.js';
 
-/** @soyCompatible */
+/**
+ * TODO(b/265346501): add docs
+ */
 export class NavigationTab extends LitElement implements NavigationTabState {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   @property({type: Boolean}) disabled = false;
   @property({type: Boolean, reflect: true}) active = false;
   @property({type: Boolean}) hideInactiveLabel = false;
@@ -30,33 +35,26 @@ export class NavigationTab extends LitElement implements NavigationTabState {
   @property() badgeValue = '';
   @property({type: Boolean}) showBadge = false;
 
-  @state() protected showFocusRing = false;
-  @state() protected showRipple = false;
+  @state() private showRipple = false;
 
-  // TODO(b/210730484): replace with @soyParam annotation
-  @ariaProperty  // tslint:disable-line:no-new-decorators
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
-  @query('button') buttonElement!: HTMLElement;
+  @query('button') buttonElement!: HTMLElement|null;
 
   @queryAsync('md-ripple') ripple!: Promise<MdRipple|null>;
 
-  /** @soyTemplate */
-  override render(): TemplateResult {
+  protected override render() {
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       <button
         class="md3-navigation-tab ${classMap(this.getRenderClasses())}"
         role="tab"
         aria-selected="${this.active}"
-        aria-label="${ifDefined(this.ariaLabel)}"
+        aria-label=${ariaLabel || nothing}
         tabindex="${this.active ? 0 : -1}"
-        @focus="${this.handleFocus}"
-        @blur="${this.handleBlur}"
-        @pointerdown="${this.handlePointerDown}"
         @click="${this.handleClick}"
-      ${ripple(this.getRipple)}>${this.renderFocusRing()}${
-        when(this.showRipple, this.renderRipple)}
+      ${ripple(this.getRipple)}>
+        <md-focus-ring></md-focus-ring>
+        ${when(this.showRipple, this.renderRipple)}
         <span aria-hidden="true" class="md3-navigation-tab__icon-content"
           ><span class="md3-navigation-tab__active-indicator"
             ></span><span class="md3-navigation-tab__icon"
@@ -69,42 +67,35 @@ export class NavigationTab extends LitElement implements NavigationTabState {
       </button>`;
   }
 
-  /** @soyTemplate */
-  protected getRenderClasses(): ClassInfo {
+  private getRenderClasses() {
     return {
       'md3-navigation-tab--hide-inactive-label': this.hideInactiveLabel,
       'md3-navigation-tab--active': this.active,
     };
   }
 
-  /** @soyTemplate */
-  protected renderFocusRing(): TemplateResult {
-    return html`<md-focus-ring .visible="${
-        this.showFocusRing}"></md-focus-ring>`;
-  }
-
-  protected getRipple = () => {
+  private readonly getRipple = () => {
     this.showRipple = true;
     return this.ripple;
   };
 
-  protected renderRipple = () => {
+  private readonly renderRipple = () => {
     return html`<md-ripple ?disabled="${
         this.disabled}" class="md3-navigation-tab__ripple"></md-ripple>`;
   };
 
-  /** @soyTemplate */
-  protected renderBadge(): TemplateResult|'' {
+  private renderBadge() {
     return this.showBadge ?
         html`<md-badge .value="${this.badgeValue}"></md-badge>` :
-        '';
+        nothing;
   }
 
-  /** @soyTemplate */
-  protected renderLabel(): TemplateResult|'' {
-    const ariaHidden = this.ariaLabel ? 'true' : 'false';
+  private renderLabel() {
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
+    const ariaHidden = ariaLabel ? 'true' : 'false';
     return !this.label ?
-        '' :
+        nothing :
         html`
         <span aria-hidden="${
             ariaHidden}" class="md3-navigation-tab__label-text">${
@@ -137,18 +128,5 @@ export class NavigationTab extends LitElement implements NavigationTabState {
     this.dispatchEvent(new CustomEvent(
         'navigation-tab-interaction',
         {detail: {state: this}, bubbles: true, composed: true}));
-  }
-
-  handlePointerDown(e: PointerEvent) {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleBlur() {
-    this.showFocusRing = false;
   }
 }

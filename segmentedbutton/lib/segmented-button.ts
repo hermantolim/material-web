@@ -7,42 +7,38 @@
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, LitElement, PropertyValues, TemplateResult} from 'lit';
+import {html, LitElement, nothing, PropertyValues, TemplateResult} from 'lit';
 import {property, queryAssignedElements, queryAsync, state} from 'lit/decorators.js';
-import {ClassInfo, classMap} from 'lit/directives/class-map.js';
-import {ifDefined} from 'lit/directives/if-defined.js';
+import {classMap} from 'lit/directives/class-map.js';
 import {when} from 'lit/directives/when.js';
 
-import {ariaProperty} from '../../decorators/aria-property.js';
-import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 /**
  * SegmentedButton is a web component implementation of the Material Design
  * segmented button component. It is intended **only** for use as a child of a
  * `SementedButtonSet` component. It is **not** intended for use in any other
  * context.
- * @soyCompatible
  */
 export class SegmentedButton extends LitElement {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   @property({type: Boolean}) disabled = false;
   @property({type: Boolean}) selected = false;
   @property() label = '';
   @property({type: Boolean}) noCheckmark = false;
   @property({type: Boolean}) hasIcon = false;
 
-  /** @soyPrefixAttribute */
-  @ariaProperty  // tslint:disable-line:no-new-decorators
-  @property({attribute: 'aria-label'})
-  override ariaLabel!: string;
-
-  @state() protected animState: string = '';
-  @state() protected showFocusRing = false;
-  @state() protected showRipple = false;
+  @state() private animState = '';
+  @state() private showRipple = false;
   @queryAssignedElements({slot: 'icon', flatten: true})
-  protected iconElement!: HTMLElement[];
-  @queryAsync('md-ripple') protected ripple!: Promise<MdRipple|null>;
+  private readonly iconElement!: HTMLElement[];
+  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
 
   protected override update(props: PropertyValues<SegmentedButton>) {
     this.animState = this.nextAnimationState(props);
@@ -69,40 +65,25 @@ export class SegmentedButton extends LitElement {
     return '';
   }
 
-  handleClick(e: MouseEvent) {
+  private handleClick() {
     const event = new Event(
         'segmented-button-interaction', {bubbles: true, composed: true});
     this.dispatchEvent(event);
   }
 
-  handlePointerDown(e: PointerEvent) {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
-  protected handleBlur() {
-    this.showFocusRing = false;
-  }
-
-  /** @soyTemplate */
-  override render(): TemplateResult {
+  protected override render() {
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       <button
         tabindex="${this.disabled ? '-1' : '0'}"
-        aria-label="${ifDefined(this.ariaLabel)}"
+        aria-label=${ariaLabel || nothing}
         aria-pressed=${this.selected}
         ?disabled=${this.disabled}
-        @focus="${this.handleFocus}"
-        @blur="${this.handleBlur}"
-        @pointerdown="${this.handlePointerDown}"
         @click="${this.handleClick}"
         class="md3-segmented-button ${classMap(this.getRenderClasses())}"
         ${ripple(this.getRipple)}>
-        ${this.renderFocusRing()}
+        <md-focus-ring class="md3-segmented-button__focus-ring"></md-focus-ring>
         ${when(this.showRipple, this.renderRipple)}
         ${this.renderOutline()}
         ${this.renderLeading()}
@@ -112,8 +93,7 @@ export class SegmentedButton extends LitElement {
     `;
   }
 
-  /** @soyTemplate */
-  protected getRenderClasses(): ClassInfo {
+  protected getRenderClasses() {
     return {
       'md3-segmented-button--selected': this.selected,
       'md3-segmented-button--unselected': !this.selected,
@@ -127,35 +107,26 @@ export class SegmentedButton extends LitElement {
     };
   }
 
-  /** @soyTemplate */
-  protected renderFocusRing(): TemplateResult {
-    return html`<md-focus-ring .visible="${
-        this.showFocusRing}" class="md3-segmented-button__focus-ring"></md-focus-ring>`;
-  }
-
-  protected readonly getRipple = () => {
+  private readonly getRipple = () => {
     this.showRipple = true;
     return this.ripple;
   };
 
-  protected renderRipple = () => {
+  private readonly renderRipple = () => {
     return html`<md-ripple ?disabled="${
         this.disabled}" class="md3-segmented-button__ripple"> </md-ripple>`;
   };
 
-  /** @soyTemplate */
-  protected renderOutline(): TemplateResult {
-    return html``;
+  protected renderOutline(): TemplateResult|typeof nothing {
+    return nothing;
   }
 
-  /** @soyTemplate */
-  protected renderLeading(): TemplateResult {
+  private renderLeading() {
     return this.label === '' ? this.renderLeadingWithoutLabel() :
                                this.renderLeadingWithLabel();
   }
 
-  /** @soyTemplate */
-  protected renderLeadingWithoutLabel(): TemplateResult {
+  private renderLeadingWithoutLabel() {
     return html`
       <span class="md3-segmented-button__leading" aria-hidden="true">
         <span class="md3-segmented-button__graphic">
@@ -170,8 +141,7 @@ export class SegmentedButton extends LitElement {
     `;
   }
 
-  /** @soyTemplate */
-  protected renderLeadingWithLabel(): TemplateResult {
+  private renderLeadingWithLabel() {
     return html`
       <span class="md3-segmented-button__leading" aria-hidden="true">
         <span class="md3-segmented-button__graphic">
@@ -186,15 +156,13 @@ export class SegmentedButton extends LitElement {
     `;
   }
 
-  /** @soyTemplate */
-  protected renderLabel(): TemplateResult {
+  private renderLabel() {
     return html`
       <span class="md3-segmented-button__label-text">${this.label}</span>
     `;
   }
 
-  /** @soyTemplate */
-  protected renderTouchTarget(): TemplateResult {
+  private renderTouchTarget() {
     return html`<span class="md3-segmented-button__touch"></span>`;
   }
 }

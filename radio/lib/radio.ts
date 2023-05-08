@@ -7,16 +7,16 @@
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, isServer, LitElement, nothing, TemplateResult} from 'lit';
+import {html, isServer, LitElement, nothing} from 'lit';
 import {property, query, queryAsync, state} from 'lit/decorators.js';
 import {when} from 'lit/directives/when.js';
 
+import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
 import {dispatchActivationClick, isActivationClick, redispatchEvent} from '../../controller/events.js';
 import {FormController, getFormValue} from '../../controller/form-controller.js';
-import {ariaProperty} from '../../decorators/aria-property.js';
-import {pointerPress, shouldShowStrongFocus} from '../../focus/strong-focus.js';
 import {ripple} from '../../ripple/directive.js';
 import {MdRipple} from '../../ripple/ripple.js';
+import {ARIAMixinStrict} from '../../types/aria.js';
 
 import {SingleSelectionController} from './single-selection-controller.js';
 
@@ -26,6 +26,10 @@ const CHECKED = Symbol('checked');
  * A radio component.
  */
 export class Radio extends LitElement {
+  static {
+    requestUpdateOnAriaChange(this);
+  }
+
   static override shadowRootOptions:
       ShadowRootInit = {...LitElement.shadowRootOptions, delegatesFocus: true};
 
@@ -69,10 +73,6 @@ export class Radio extends LitElement {
    */
   @property({reflect: true}) name = '';
 
-  @ariaProperty  // tslint:disable-line:no-new-decorators
-  @property({attribute: 'data-aria-label', noAccessor: true})
-  override ariaLabel!: string;
-
   /**
    * The associated form element with which this element's value will submit.
    */
@@ -83,7 +83,6 @@ export class Radio extends LitElement {
   @query('input') private readonly input!: HTMLInputElement|null;
   @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
   private readonly selectionController = new SingleSelectionController(this);
-  @state() private showFocusRing = false;
   @state() private showRipple = false;
 
   constructor() {
@@ -109,10 +108,12 @@ export class Radio extends LitElement {
     this.input?.focus();
   }
 
-  protected override render(): TemplateResult {
+  protected override render() {
+    // Needed for closure conformance
+    const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       ${when(this.showRipple, this.renderRipple)}
-      ${this.renderFocusRing()}
+      <md-focus-ring for="input"></md-focus-ring>
       <svg class="icon" viewBox="0 0 20 20">
         <mask id="cutout">
           <rect width="100%" height="100%" fill="white" />
@@ -122,27 +123,17 @@ export class Radio extends LitElement {
         <circle class="inner circle" cx="10" cy="10" r="5" />
       </svg>
       <input
+        id="input"
         type="radio"
         name=${this.name}
-        aria-label=${this.ariaLabel || nothing}
+        aria-label=${ariaLabel || nothing}
         .checked=${this.checked}
         .value=${this.value}
         ?disabled=${this.disabled}
         @change=${this.handleChange}
-        @focus=${this.handleFocus}
-        @blur=${this.handleBlur}
-        @pointerdown=${this.handlePointerDown}
         ${ripple(this.getRipple)}
       >
     `;
-  }
-
-  private handleBlur() {
-    this.showFocusRing = false;
-  }
-
-  private handleFocus() {
-    this.showFocusRing = shouldShowStrongFocus();
   }
 
   private handleChange(event: Event) {
@@ -155,11 +146,6 @@ export class Radio extends LitElement {
     redispatchEvent(this, event);
   }
 
-  private handlePointerDown() {
-    pointerPress();
-    this.showFocusRing = shouldShowStrongFocus();
-  }
-
   private readonly getRipple = () => {
     this.showRipple = true;
     return this.ripple;
@@ -168,8 +154,4 @@ export class Radio extends LitElement {
   private readonly renderRipple = () => {
     return html`<md-ripple unbounded ?disabled=${this.disabled}></md-ripple>`;
   };
-
-  private renderFocusRing(): TemplateResult {
-    return html`<md-focus-ring .visible=${this.showFocusRing}></md-focus-ring>`;
-  }
 }

@@ -16,7 +16,8 @@ declare global {
 }
 
 /**
- * @soyCompatible
+ * TODO(b/267336424): add docs
+ *
  * @final
  * @suppress {visibility}
  */
