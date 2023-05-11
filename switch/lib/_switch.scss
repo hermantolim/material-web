@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// stylelint-disable selector-class-pattern --
-// Selector '.md3-*' should only be used in this project.
-
 // go/keep-sorted start
 @use 'sass:list';
 @use 'sass:map';
@@ -121,9 +118,7 @@ $_forced-colors-theme: (
     outline: none;
     vertical-align: top;
     -webkit-tap-highlight-color: transparent;
-  }
 
-  md-focus-ring {
     @include focus-ring.theme(
       (
         'shape-start-start': var(--_track-shape-start-start),
@@ -134,7 +129,7 @@ $_forced-colors-theme: (
     );
   }
 
-  .md3-switch {
+  .switch {
     align-items: center;
     background: none;
     border: none;
@@ -156,29 +151,28 @@ $_forced-colors-theme: (
   }
 
   // Touch target
-  .md3-switch__touch {
+  .touch {
     @include touch-target.touch-target();
   }
 
   // Disabled
-  .md3-switch:disabled {
+  .switch:disabled {
     cursor: default;
     pointer-events: none;
   }
 
   // Disabled - Track
-  .md3-switch__track {
-    .md3-switch:disabled & {
-      background-color: transparent;
-      border-color: transparent;
+  .switch:disabled .track {
+    background-color: transparent;
+    border-color: transparent;
+  }
 
-      &::before {
-        background-clip: content-box;
-      }
-    }
-    .md3-switch--selected:disabled & {
-      background-clip: border-box;
-    }
+  .switch:disabled .track::before {
+    background-clip: content-box;
+  }
+
+  .switch--selected:disabled .track {
+    background-clip: border-box;
   }
 
   @include track.styles();
@@ -198,28 +192,6 @@ $_forced-colors-theme: (
       (
         color-key: disabled-unselected-handle-color,
         opacity-key: disabled-unselected-handle-opacity
-      ),
-      // Disabled Track
-      (
-          color-key: disabled-selected-track-color,
-          opacity-key: disabled-track-opacity
-        ),
-      (
-        color-key: disabled-unselected-track-color,
-        opacity-key: disabled-track-opacity
-      ),
-      (
-        color-key: disabled-unselected-track-outline-color,
-        opacity-key: disabled-track-opacity
-      ),
-      // Disabled Icon
-      (
-          color-key: disabled-selected-icon-color,
-          opacity-key: disabled-selected-icon-opacity
-        ),
-      (
-        color-key: disabled-unselected-icon-color,
-        opacity-key: disabled-unselected-icon-opacity
       )
     )
   );

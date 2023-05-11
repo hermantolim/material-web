@@ -75,17 +75,24 @@
     border: none;
     border-radius: inherit;
     display: flex;
+    gap: 8px;
     outline: none;
     padding: 0;
+    position: relative;
     text-decoration: none;
   }
 
-  .action:first-of-type {
+  .primary.action {
     padding-inline-start: 8px;
+    padding-inline-end: 16px;
   }
 
-  .action:last-of-type {
-    padding-inline-end: 8px;
+  .touch {
+    height: 48px;
+    inset: 50% 0 0;
+    position: absolute;
+    transform: translateY(-50%);
+    width: 100%;
   }
 
   // Outline, separate node for disabled opacity changes
@@ -111,7 +118,8 @@
   }
 
   .label,
-  .icon {
+  .icon,
+  .touch {
     // Place content above background elements
     z-index: 1;
   }
@@ -122,7 +130,6 @@
     display: flex;
     font: var(--_label-text-type);
     height: 100%;
-    padding: 0 8px;
     text-overflow: ellipsis;
     user-select: none;
     white-space: nowrap;
@@ -147,30 +154,33 @@
 
   .icon {
     align-self: center;
-    color: var(--_leading-icon-color);
-    height: var(--_icon-size);
+    display: flex;
     position: relative;
   }
 
-  .icon ::slotted(*) {
+  .icon ::slotted(:first-child) {
     font-size: var(--_icon-size);
     height: var(--_icon-size);
     width: var(--_icon-size);
   }
 
-  :hover .icon {
+  .leading.icon {
+    color: var(--_leading-icon-color);
+  }
+
+  :hover .leading.icon {
     color: var(--_hover-leading-icon-color);
   }
 
-  :focus .icon {
+  :focus .leading.icon {
     color: var(--_focus-leading-icon-color);
   }
 
-  :active .icon {
+  :active .leading.icon {
     color: var(--_pressed-leading-icon-color);
   }
 
-  .disabled .icon {
+  .disabled .leading.icon {
     color: var(--_disabled-leading-icon-color);
     opacity: var(--_disabled-leading-icon-opacity);
   }

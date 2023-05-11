@@ -7,7 +7,6 @@
 @use 'sass:list';
 // go/keep-sorted end
 // go/keep-sorted start
-@use '../../ripple/ripple';
 @use '../../tokens';
 // go/keep-sorted end
 
@@ -38,138 +37,38 @@
 
   :host {
     @each $token, $value in $tokens {
-      --_#{$token}: #{$value};
+      --_#{$token}: var(--md-filter-chip-#{$token}, #{$value});
     }
 
     // Support logical shape properties
     --_container-shape-start-start: var(
-      --md-checkbox-shape-start-start,
+      --md-filter-chip-container-shape-start-start,
       var(--_container-shape)
     );
     --_container-shape-start-end: var(
-      --md-checkbox-shape-start-end,
+      --md-filter-chip-container-shape-start-end,
       var(--_container-shape)
     );
     --_container-shape-end-end: var(
-      --md-checkbox-shape-end-end,
+      --md-filter-chip-container-shape-end-end,
       var(--_container-shape)
     );
     --_container-shape-end-start: var(
-      --md-checkbox-shape-end-start,
+      --md-filter-chip-container-shape-end-start,
       var(--_container-shape)
     );
-  }
-
-  .selected {
-    @include ripple.theme(
-      (
-        focus-color: var(--_selected-focus-state-layer-color),
-        focus-opacity: var(--_selected-focus-state-layer-opacity),
-        hover-color: var(--_selected-hover-state-layer-color),
-        hover-opacity: var(--_selected-hover-state-layer-opacity),
-        pressed-color: var(--_selected-pressed-state-layer-color),
-        pressed-opacity: var(--_selected-pressed-state-layer-opacity),
-      )
-    );
-  }
-
-  .selected .icon {
-    width: var(--_icon-size);
-  }
-
-  .checkmark {
-    inset: 0;
-    opacity: 0;
-    position: absolute;
-  }
-
-  .selected .checkmark {
-    opacity: 1;
-  }
-
-  .selected::before {
-    background: var(--_selected-container-color);
-  }
-
-  .selected .outline {
-    border-width: var(--_selected-outline-width);
   }
 
   .selected.elevated::before {
     background: var(--_elevated-selected-container-color);
   }
 
-  .selected.disabled::before {
-    background: var(--_disabled-selected-container-color);
-    opacity: var(--_disabled-selected-container-opacity);
+  .checkmark {
+    height: var(--_icon-size);
+    width: var(--_icon-size);
   }
 
-  .selected .label {
-    color: var(--_selected-label-text-color);
-  }
-
-  .selected:hover .label {
-    color: var(--_selected-hover-label-text-color);
-  }
-
-  .selected:focus .label {
-    color: var(--_selected-focus-label-text-color);
-  }
-
-  .selected:active .label {
-    color: var(--_selected-pressed-label-text-color);
-  }
-
-  .selected .icon {
-    color: var(--_selected-leading-icon-color);
-  }
-
-  .selected:hover .icon {
-    color: var(--_selected-hover-leading-icon-color);
-  }
-
-  .selected:focus .icon {
-    color: var(--_selected-focus-leading-icon-color);
-  }
-
-  .selected:active .icon {
-    color: var(--_selected-pressed-leading-icon-color);
-  }
-
-  .icon.trailing {
-    color: var(--_trailing-icon-color);
-  }
-
-  :hover .icon.trailing {
-    color: var(--_hover-trailing-icon-color);
-  }
-
-  :focus .icon.trailing {
-    color: var(--_focus-trailing-icon-color);
-  }
-
-  :active .icon.trailing {
-    color: var(--_pressed-trailing-icon-color);
-  }
-
-  .disabled .icon.trailing {
-    color: var(--_disabled-trailing-icon-color);
-    opacity: var(--_disabled-trailing-icon-opacity);
-  }
-
-  .selected .icon.trailing {
-    color: var(--_selected-trailing-icon-color);
-  }
-
-  .selected:hover .icon.trailing {
-    color: var(--_selected-hover-trailing-icon-color);
-  }
-
-  .selected:focus .icon.trailing {
-    color: var(--_selected-focus-trailing-icon-color);
-  }
-
-  .selected:active .icon.trailing {
-    color: var(--_selected-pressed-trailing-icon-color);
+  .disabled .checkmark {
+    opacity: var(--_disabled-leading-icon-opacity);
   }
 }

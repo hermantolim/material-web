@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// stylelint-disable selector-class-pattern --
-// Selector '.md3-*' should only be used in this project.
-
 // go/keep-sorted start
 @use 'sass:list';
 @use 'sass:map';
@@ -14,12 +11,10 @@
 @use '../../focus/focus-ring';
 @use '../../ripple/ripple';
 @use '../../tokens';
-@use './shared';
 // go/keep-sorted end
 
 @mixin theme($tokens) {
   $supported-tokens: tokens.$md-comp-icon-button-supported-tokens;
-  $tokens: shared.flatten-disabled-colors($tokens);
 
   @each $token, $value in $tokens {
     @if list.index($supported-tokens, $token) == null {
@@ -34,7 +29,6 @@
 
 @mixin styles() {
   $tokens: tokens.md-comp-icon-button-values();
-  $tokens: shared.flatten-disabled-colors($tokens);
 
   :host {
     @each $token, $value in $tokens {
@@ -51,7 +45,7 @@
     );
   }
 
-  .md3-icon-button--standard {
+  .standard {
     background-color: transparent;
     color: var(--_unselected-icon-color);
 
@@ -84,7 +78,11 @@
     }
   }
 
-  .md3-icon-button--selected {
+  .standard:disabled .icon {
+    opacity: var(--_disabled-icon-opacity);
+  }
+
+  .selected {
     &:not(:disabled) {
       color: var(--_selected-icon-color);
 

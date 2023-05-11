@@ -40,7 +40,7 @@ Checkbox                      | ✅     | ✅    | ❌
 Chips                         | 🟡     | ❌    | ❌
 Dialog                        | ✅     | ✅    | ❌
 Divider                       | ✅     | ✅    | 🟡
-Elevation                     | ✅     | ✅    | 🟡
+Elevation                     | ✅     | ✅    | ✅
 Focus ring                    | ✅     | ✅    | 🟡
 Field                         | ✅     | ✅    | 🟡
 Icon                          | ✅     | ✅    | ❌
@@ -53,7 +53,7 @@ Ripple                        | ✅     | ✅    | 🟡
 Select                        | ✅     | ✅    | ❌
 Slider                        | ✅     | ✅    | ❌
 Switch                        | ✅     | ✅    | ❌
-Tabs                          | 🟡     | ❌    | ❌
+Tabs                          | ✅     | 🟡    | ❌
 Text field                    | ✅     | ✅    | 🟡
 
 ### 1.1+ Components

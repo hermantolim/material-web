@@ -22,11 +22,11 @@ export class AssistChip extends Chip {
   @property() href = '';
   @property() target: '_blank'|'_parent'|'_self'|'_top'|'' = '';
 
-  protected get primaryFocusFor() {
+  protected get focusFor() {
     return this.href ? 'link' : 'button';
   }
 
-  protected override get primaryRippleDisabled() {
+  protected override get rippleDisabled() {
     // Link chips cannot be disabled
     return !this.href && this.disabled;
   }
@@ -44,23 +44,23 @@ export class AssistChip extends Chip {
     const {ariaLabel} = this as ARIAMixinStrict;
     if (this.href) {
       return html`
-        <a class="action"
+        <a class="primary action"
           id="link"
           aria-label=${ariaLabel || nothing}
           href=${this.href}
           target=${this.target || nothing}
-          ${ripple(this.getPrimaryRipple)}
+          ${ripple(this.getRipple)}
         >${this.renderContent()}</a>
       `;
     }
 
     return html`
-      <button class="action"
+      <button class="primary action"
         id="button"
         aria-label=${ariaLabel || nothing}
         ?disabled=${this.disabled}
         type="button"
-        ${ripple(this.getPrimaryRipple)}
+        ${ripple(this.getRipple)}
       >${this.renderContent()}</button>
     `;
   }

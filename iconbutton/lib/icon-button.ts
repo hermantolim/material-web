@@ -5,7 +5,6 @@
  */
 
 import '../../focus/focus-ring.js';
-import '../../icon/icon.js';
 import '../../ripple/ripple.js';
 
 import {html, LitElement, nothing} from 'lit';
@@ -105,7 +104,7 @@ export class IconButton extends LitElement {
           ariaLabel;
     }
     return staticHtml`<${tag}
-        class="md3-icon-button ${classMap(this.getRenderClasses())}"
+        class="icon-button ${classMap(this.getRenderClasses())}"
         id="button"
         aria-label="${ariaLabelValue || nothing}"
         aria-haspopup="${!this.href && ariaHasPopup || nothing}"
@@ -127,7 +126,7 @@ export class IconButton extends LitElement {
     // Needed for closure conformance
     const {ariaLabel} = this as ARIAMixinStrict;
     return html`
-      <a class="md3-icon-button__link"
+      <a class="link"
         id="link"
         href="${this.href}"
         target="${this.target as LinkTarget || nothing}"
@@ -139,22 +138,22 @@ export class IconButton extends LitElement {
 
   protected getRenderClasses() {
     return {
-      'md3-icon-button--flip-icon': this.flipIcon,
-      'md3-icon-button--selected': this.toggle && this.selected,
+      'flip-icon': this.flipIcon,
+      'selected': this.toggle && this.selected,
     };
   }
 
   private renderIcon() {
-    return html`<md-icon class="md3-icon-button__icon"><slot></slot></md-icon>`;
+    return html`<span class="icon"><slot></slot></span>`;
   }
 
   private renderSelectedIcon() {
     // Use default slot as fallback to not require specifying multiple icons
-    return html`<md-icon class="md3-icon-button__icon md3-icon-button__icon--selected"><slot name="selectedIcon"><slot></slot></slot></md-icon>`;
+    return html`<span class="icon icon--selected"><slot name="selectedIcon"><slot></slot></slot></span>`;
   }
 
   private renderTouchTarget() {
-    return html`<span class="md3-icon-button__touch"></span>`;
+    return html`<span class="touch"></span>`;
   }
 
   private renderFocusRing() {

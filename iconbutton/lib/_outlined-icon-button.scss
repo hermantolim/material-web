@@ -3,16 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-// stylelint-disable selector-class-pattern --
-// Selector '.md3-*' should only be used in this project.
-
 // go/keep-sorted start
 @use 'sass:list';
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
 @use '../../ripple/ripple';
-@use '../../sass/color';
 @use '../../tokens';
 @use './shared';
 // go/keep-sorted end
@@ -28,8 +24,6 @@
     )
   );
 
-  $tokens: shared.flatten-disabled-colors($tokens, $variant: 'outlined');
-
   @each $token, $value in $tokens {
     @if list.index($supported-tokens, $token) == null {
       @error 'Token `#{$token}` is not a supported token.';
@@ -43,7 +37,6 @@
 
 @mixin styles() {
   $tokens: tokens.md-comp-outlined-icon-button-values();
-  $tokens: shared.flatten-disabled-colors($tokens, $variant: 'outlined');
 
   :host {
     @each $token, $value in $tokens {
@@ -69,7 +62,7 @@
     );
   }
 
-  .md3-icon-button--outlined {
+  .outlined {
     background-color: transparent;
     color: var(--_unselected-icon-color);
 
@@ -111,7 +104,11 @@
     }
   }
 
-  .md3-icon-button--outlined::before {
+  .outlined:disabled .icon {
+    opacity: var(--_disabled-icon-opacity);
+  }
+
+  .outlined::before {
     block-size: 100%;
     border-style: solid;
     border-radius: inherit;
@@ -121,17 +118,17 @@
     inset: 0;
     pointer-events: none;
     position: absolute;
+    z-index: -1; // place behind content
   }
 
   // Selected toggle buttons have no outline.
-  .md3-icon-button--outlined.md3-icon-button--selected::before {
+  .outlined.selected::before {
     border-width: 0;
   }
 
   // Selected icon button toggle.
-  .md3-icon-button--selected {
+  .selected {
     &:not(:disabled) {
-      background-color: var(--_selected-container-color);
       color: var(--_selected-icon-color);
 
       &:hover {
@@ -147,10 +144,6 @@
       }
     }
 
-    &:disabled {
-      background-color: var(--_disabled-selected-container-color);
-    }
-
     @include ripple.theme(
       (
         focus-color: var(--_selected-focus-state-layer-color),
@@ -163,9 +156,18 @@
     );
   }
 
+  .selected:not(:disabled)::before {
+    background-color: var(--_selected-container-color);
+  }
+
+  .selected:disabled::before {
+    background-color: var(--_disabled-selected-container-color);
+    opacity: var(--_disabled-selected-container-opacity);
+  }
+
   @media (forced-colors: active) {
     // Selected button in HCM has an outline.
-    .md3-icon-button--selected {
+    .selected {
       &::before {
         border-color: var(--_unselected-outline-color);
         border-width: var(--_unselected-outline-width);

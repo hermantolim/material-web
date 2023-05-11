@@ -6,16 +6,12 @@
 // This file contains common static styles that are shared across icon button
 // variants.
 
-// stylelint-disable selector-class-pattern --
-// Selector '.md3-*' should only be used in this project.
-
 // go/keep-sorted start
 @use 'sass:map';
 // go/keep-sorted end
 // go/keep-sorted start
 @use '../../focus/focus-ring';
 @use '../../icon/icon';
-@use '../../sass/color';
 @use '../../sass/touch-target';
 @use '../../tokens';
 // go/keep-sorted end
@@ -43,8 +39,9 @@
     pointer-events: none;
   }
 
-  .md3-icon-button {
+  .icon-button {
     align-items: center;
+    background: none;
     border: none;
     box-sizing: border-box;
     cursor: pointer;
@@ -62,7 +59,10 @@
     border-end-end-radius: var(--_container-shape-end-end);
   }
 
-  .md3-icon-button__icon {
+  .icon {
+    height: var(--_icon-size);
+    width: var(--_icon-size);
+
     @include icon.theme(
       (
         size: var(--_icon-size),
@@ -80,84 +80,22 @@
     border-end-end-radius: var(--_container-shape-end-end);
   }
 
-  .md3-icon-button--flip-icon .md3-icon-button__icon {
+  .flip-icon .icon {
     transform: scaleX(-1);
   }
 
-  .md3-icon-button__icon {
+  .icon {
     display: inline-flex;
   }
 
-  .md3-icon-button__link {
+  .link {
     height: 100%;
     outline: none;
     position: absolute;
     width: 100%;
   }
 
-  .md3-icon-button__touch {
+  .touch {
     @include touch-target.touch-target;
   }
-}
-
-///
-// Flattens disabled colors for icon button theme keys (across all variants).
-/// @param {String} $variant - The variant, specified as one of ('filled',
-///     'outlined', 'standard').
-///
-@function flatten-disabled-colors($theme, $variant: 'standard') {
-  // If opacity value is null (e.g. for dark theme map, only the color
-  // changes, so the opacity value is null), use the default opacity value.
-  // Otherwise, the color is not flattened, meaning that the color would
-  // be applied without any opacity, which is incorrect.
-  $opacity-keys: [ 'disabled-container-opacity', 'disabled-icon-opacity',
-    'disabled-selected-container-opacity' ];
-
-  @each $opacity-key in $opacity-keys {
-    // If opacity value is null, use the opacity value from the default tokens.
-    @if not map.get($theme, $opacity-key) {
-      $light-theme-value: map.get(
-        tokens.md-comp-icon-button-values(),
-        $opacity-key
-      );
-      $light-theme-filled-value: map.get(
-        tokens.md-comp-filled-icon-button-values(),
-        $opacity-key
-      );
-      $light-theme-filled-tonal-value: map.get(
-        tokens.md-comp-filled-tonal-icon-button-values(),
-        $opacity-key
-      );
-      $light-theme-outlined-value: map.get(
-        tokens.md-comp-outlined-icon-button-values(),
-        $opacity-key
-      );
-
-      @if $variant == 'standard' and $light-theme-value {
-        $theme: map.set($theme, $opacity-key, $light-theme-value);
-      } @else if $variant == 'filled' and $light-theme-filled-value {
-        $theme: map.set($theme, $opacity-key, $light-theme-filled-value);
-      } @else if $variant == 'filled-tonal' and $light-theme-filled-tonal-value
-      {
-        $theme: map.set($theme, $opacity-key, $light-theme-filled-tonal-value);
-      } @else if $variant == 'outlined' and $light-theme-outlined-value {
-        $theme: map.set($theme, $opacity-key, $light-theme-outlined-value);
-      }
-    }
-  }
-
-  @return color.join-color-and-opacity-pairs(
-    $theme,
-    (
-      (
-        color-key: 'disabled-container-color',
-        opacity-key: 'disabled-container-opacity'
-      ),
-      (color-key: 'disabled-icon-color', opacity-key: 'disabled-icon-opacity'),
-      (
-        color-key: 'disabled-selected-container-color',
-        opacity-key: 'disabled-selected-container-opacity'
-      )
-    )
-  );
 }
