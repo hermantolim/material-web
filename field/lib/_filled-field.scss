@@ -92,7 +92,15 @@ $_md-sys-motion: tokens.md-sys-motion-values();
 
   .label.floating {
     position: absolute;
-    top: 0;
+    top: var(--_with-label-top-space);
+  }
+
+  .field:not(.with-start) .label-wrapper {
+    margin-inline-start: var(--_leading-space);
+  }
+
+  .field:not(.with-end) .label-wrapper {
+    margin-inline-end: var(--_trailing-space);
   }
 
   .active-indicator {
@@ -125,21 +133,27 @@ $_md-sys-motion: tokens.md-sys-motion-values();
     opacity: 1;
   }
 
-  .field:not(.with-start) .start {
-    padding-inline-start: var(--_container-padding-horizontal);
+  .field:not(.with-start) .content ::slotted(*) {
+    padding-inline-start: var(--_leading-space);
   }
 
-  .field:not(.with-end) .end {
-    padding-inline-end: var(--_container-padding-horizontal);
+  .field:not(.with-end) .content ::slotted(*) {
+    padding-inline-end: var(--_trailing-space);
   }
 
-  .field:not(.no-label) .container {
-    padding-bottom: var(--_with-label-container-padding-vertical);
-    padding-top: var(--_with-label-container-padding-vertical);
+  .field:not(.no-label) .content ::slotted(:not(textarea)) {
+    padding-bottom: var(--_with-label-bottom-space);
+    padding-top: calc(
+      var(--_with-label-top-space) + var(--_label-text-populated-line-height)
+    );
   }
 
-  .field:not(.no-label) .middle {
-    padding-top: var(--_label-text-populated-line-height);
+  .field:not(.no-label) .content ::slotted(textarea) {
+    // Use margin for textareas since they will scroll over the label if not.
+    margin-bottom: var(--_with-label-bottom-space);
+    margin-top: calc(
+      var(--_with-label-top-space) + var(--_label-text-populated-line-height)
+    );
   }
 
   :hover .active-indicator::before {
