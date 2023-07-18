@@ -11,11 +11,10 @@ import {live} from 'lit/directives/live.js';
 import {styleMap} from 'lit/directives/style-map.js';
 import {html as staticHtml, StaticValue} from 'lit/static-html.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {redispatchEvent} from '../../controller/events.js';
-import {FormController, getFormValue} from '../../controller/form-controller.js';
-import {stringConverter} from '../../controller/string-converter.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
+import {redispatchEvent} from '../../internal/controller/events.js';
+import {stringConverter} from '../../internal/controller/string-converter.js';
 
 /**
  * Input types that are compatible with the text field.
@@ -43,8 +42,12 @@ export abstract class TextField extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
+  /** @nocollapse */
   static override shadowRootOptions:
       ShadowRootInit = {...LitElement.shadowRootOptions, delegatesFocus: true};
+
+  /** @nocollapse  */
+  static formAssociated = true;
 
   @property({type: Boolean, reflect: true}) disabled = false;
   /**
@@ -61,59 +64,64 @@ export abstract class TextField extends LitElement {
    * Calling `reportValidity()` will automatically update `errorText` to the
    * native `validationMessage`.
    */
-  @property() errorText = '';
+  @property({attribute: 'error-text'}) errorText = '';
   @property() label?: string;
   @property({type: Boolean, reflect: true}) required = false;
   /**
    * The current value of the text field. It is always a string.
-   *
-   * This is equal to `defaultValue` before user input.
    */
   @property() value = '';
   /**
-   * The default value of the text field. Before user input, changing the
-   * default value will update `value` as well.
-   *
-   * When the text field is reset, its `value` will be set to this default
-   * value.
-   */
-  @property() defaultValue = '';
-  /**
    * An optional prefix to display before the input value.
    */
-  @property() prefixText = '';
+  @property({attribute: 'prefix-text'}) prefixText = '';
   /**
    * An optional suffix to display after the input value.
    */
-  @property() suffixText = '';
+  @property({attribute: 'suffix-text'}) suffixText = '';
   /**
    * Whether or not the text field has a leading icon. Used for SSR.
    */
-  @property({type: Boolean}) hasLeadingIcon = false;
+  @property({type: Boolean, attribute: 'has-leading-icon'})
+  hasLeadingIcon = false;
   /**
    * Whether or not the text field has a trailing icon. Used for SSR.
    */
-  @property({type: Boolean}) hasTrailingIcon = false;
+  @property({type: Boolean, attribute: 'has-trailing-icon'})
+  hasTrailingIcon = false;
   /**
    * Conveys additional information below the text field, such as how it should
    * be used.
    */
-  @property() supportingText = '';
+  @property({attribute: 'supporting-text'}) supportingText = '';
   /**
    * Override the input text CSS `direction`. Useful for RTL languages that use
    * LTR notation for fractions.
    */
-  @property() textDirection = '';
+  @property({attribute: 'text-direction'}) textDirection = '';
 
-  // FormElement
+  /**
+   * The associated form element with which this element's value will submit.
+   */
   get form() {
-    return this.closest('form');
+    return this.internals.form;
   }
 
-  @property({reflect: true, converter: stringConverter}) name = '';
+  /**
+   * The labels this element is associated with.
+   */
+  get labels() {
+    return this.internals.labels;
+  }
 
-  [getFormValue]() {
-    return this.value;
+  /**
+   * The HTML name to use in form submission.
+   */
+  get name() {
+    return this.getAttribute('name') ?? '';
+  }
+  set name(name: string) {
+    this.setAttribute('name', name);
   }
 
   // <input> properties
@@ -268,19 +276,6 @@ export abstract class TextField extends LitElement {
    */
   @state() private refreshErrorAlert = false;
   /**
-   * Returns true when the text field's `value` property has been changed from
-   * it's initial value.
-   *
-   * Setting `value` should always overwrite `defaultValue`, even when `value`
-   * is an empty string. This flag ensures that behavior.
-   */
-  @state() private valueHasChanged = false;
-  /**
-   * Whether or not to ignore the next `value` change when computing
-   * `valueHasChanged`.
-   */
-  private ignoreNextValueChange = false;
-  /**
    * Whether or not a native error has been reported via `reportValidity()`.
    */
   @state() private nativeError = false;
@@ -299,10 +294,11 @@ export abstract class TextField extends LitElement {
   private readonly leadingIcons!: Element[];
   @queryAssignedElements({slot: 'trailingicon'})
   private readonly trailingIcons!: Element[];
+  private readonly internals =
+      (this as HTMLElement /* needed for closure */).attachInternals();
 
   constructor() {
     super();
-    this.addController(new FormController(this));
     if (!isServer) {
       this.addEventListener('click', this.focus);
       this.addEventListener('focusin', this.handleFocusin);
@@ -462,27 +458,20 @@ export abstract class TextField extends LitElement {
    */
   reset() {
     this.dirty = false;
-    this.valueHasChanged = false;
-    this.ignoreNextValueChange = true;
-    this.value = this.defaultValue;
+    this.value = this.getAttribute('value') ?? '';
     this.nativeError = false;
     this.nativeErrorText = '';
   }
 
-  protected override update(changedProperties: PropertyValues) {
-    // Consider a value change anything that is not the initial empty string
-    // value.
-    const valueHasChanged = changedProperties.has('value') &&
-        changedProperties.get('value') !== undefined;
-    if (valueHasChanged && !this.ignoreNextValueChange) {
-      this.valueHasChanged = true;
+  override attributeChangedCallback(
+      attribute: string, newValue: string|null, oldValue: string|null) {
+    if (attribute === 'value' && this.dirty) {
+      // After user input, changing the value attribute no longer updates the
+      // text field's value (until reset). This matches native <input> behavior.
+      return;
     }
 
-    if (this.ignoreNextValueChange) {
-      this.ignoreNextValueChange = false;
-    }
-
-    super.update(changedProperties);
+    super.attributeChangedCallback(attribute, newValue, oldValue);
   }
 
   protected override render() {
@@ -504,10 +493,8 @@ export abstract class TextField extends LitElement {
     // If a property such as `type` changes and causes the internal <input>
     // value to change without dispatching an event, re-sync it.
     const value = this.getInput().value;
+    this.internals.setFormValue(value);
     if (this.value !== value) {
-      // Don't consider these updates (such as setting `defaultValue`) as
-      // the developer directly changing the `value`.
-      this.ignoreNextValueChange = true;
       // Note this is typically inefficient in updated() since it schedules
       // another update. However, it is needed for the <input> to fully render
       // before checking its value.
@@ -533,10 +520,10 @@ export abstract class TextField extends LitElement {
       ?disabled=${this.disabled}
       ?error=${this.hasError}
       ?focused=${this.focused}
-      ?hasEnd=${this.hasTrailingIcon}
-      ?hasStart=${this.hasLeadingIcon}
+      ?has-end=${this.hasTrailingIcon}
+      ?has-start=${this.hasLeadingIcon}
       .label=${this.label}
-      ?populated=${!!this.getInputValue()}
+      ?populated=${!!this.value}
       ?required=${this.required}
     >
       ${this.renderLeadingIcon()}
@@ -588,20 +575,11 @@ export abstract class TextField extends LitElement {
        ?required=${this.required}
        step=${(this.step || nothing) as unknown as number}
        type=${this.type}
-       .value=${live(this.getInputValue())}
+       .value=${live(this.value)}
        @change=${this.redispatchEvent}
        @input=${this.handleInput}
        @select=${this.redispatchEvent}
      >`;
-  }
-
-  private getInputValue() {
-    const alwaysShowValue = this.dirty || this.valueHasChanged;
-    if (alwaysShowValue) {
-      return this.value;
-    }
-
-    return this.defaultValue || this.value;
   }
 
   private getAriaDescribedBy() {
@@ -740,5 +718,15 @@ export abstract class TextField extends LitElement {
   private handleIconChange() {
     this.hasLeadingIcon = this.leadingIcons.length > 0;
     this.hasTrailingIcon = this.trailingIcons.length > 0;
+  }
+
+  /** @private */
+  formResetCallback() {
+    this.reset();
+  }
+
+  /** @private */
+  formStateRestoreCallback(state: string) {
+    this.value = state;
   }
 }

@@ -7,16 +7,12 @@
 import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
-import {html, isServer, LitElement, nothing, TemplateResult} from 'lit';
-import {property, query, queryAsync, state} from 'lit/decorators.js';
+import {html, isServer, LitElement, nothing, PropertyValues, TemplateResult} from 'lit';
+import {property, query} from 'lit/decorators.js';
 import {ClassInfo, classMap} from 'lit/directives/class-map.js';
-import {when} from 'lit/directives/when.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {dispatchActivationClick, isActivationClick} from '../../controller/events.js';
-import {FormController, getFormValue} from '../../controller/form-controller.js';
-import {ripple} from '../../ripple/directive.js';
-import {MdRipple} from '../../ripple/ripple.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
+import {dispatchActivationClick, isActivationClick} from '../../internal/controller/events.js';
 
 /**
  * @fires input {InputEvent} Fired whenever `selected` changes due to user
@@ -29,12 +25,11 @@ export class Switch extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
+  /** @nocollapse */
   static override shadowRootOptions:
       ShadowRootInit = {mode: 'open', delegatesFocus: true};
 
-  /**
-   * @nocollapse
-   */
+  /** @nocollapse */
   static formAssociated = true;
 
   /**
@@ -57,27 +52,11 @@ export class Switch extends LitElement {
    * Shows only the selected icon, and not the deselected icon. If `true`,
    * overrides the behavior of the `icons` property.
    */
-  @property({type: Boolean}) showOnlySelectedIcon = false;
-
-  @state() private showRipple = false;
-
-  // Ripple
-  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
+  @property({type: Boolean, attribute: 'show-only-selected-icon'})
+  showOnlySelectedIcon = false;
 
   // Button
   @query('button') private readonly button!: HTMLButtonElement|null;
-
-  /**
-   * The associated form element with which this element's value will submit.
-   */
-  get form() {
-    return this.closest('form');
-  }
-
-  /**
-   * The HTML name to use in form submission.
-   */
-  @property({reflect: true}) name = '';
 
   /**
    * The value associated with this switch on form submission. `null` is
@@ -85,13 +64,35 @@ export class Switch extends LitElement {
    */
   @property() value = 'on';
 
-  [getFormValue]() {
-    return this.selected ? this.value : null;
+  /**
+   * The HTML name to use in form submission.
+   */
+  get name() {
+    return this.getAttribute('name') ?? '';
   }
+  set name(name: string) {
+    this.setAttribute('name', name);
+  }
+
+  /**
+   * The associated form element with which this element's value will submit.
+   */
+  get form() {
+    return this.internals.form;
+  }
+
+  /**
+   * The labels this element is associated with.
+   */
+  get labels() {
+    return this.internals.labels;
+  }
+
+  private readonly internals =
+      (this as HTMLElement /* needed for closure */).attachInternals();
 
   constructor() {
     super();
-    this.addController(new FormController(this));
     if (!isServer) {
       this.addEventListener('click', (event: MouseEvent) => {
         if (!isActivationClick(event)) {
@@ -106,12 +107,19 @@ export class Switch extends LitElement {
     }
   }
 
+  protected override update(changed: PropertyValues<Switch>) {
+    const state = String(this.selected);
+    this.internals.setFormValue(this.selected ? this.value : null, state);
+    super.update(changed);
+  }
+
   protected override render(): TemplateResult {
     // NOTE: buttons must use only [phrasing
     // content](https://html.spec.whatwg.org/multipage/dom.html#phrasing-content)
     // children, which includes custom elements, but not `div`s
     return html`
       <button
+        id="switch"
         type="button"
         class="switch ${classMap(this.getRenderClasses())}"
         role="switch"
@@ -119,7 +127,6 @@ export class Switch extends LitElement {
         aria-label=${(this as ARIAMixin).ariaLabel || nothing}
         ?disabled=${this.disabled}
         @click=${this.handleClick}
-        ${ripple(this.getRipple)}
       >
         <md-focus-ring></md-focus-ring>
         <span class="track">
@@ -136,29 +143,13 @@ export class Switch extends LitElement {
     };
   }
 
-  private readonly renderRipple = () => {
-    return html`
-      <span class="ripple">
-        <md-ripple
-          ?disabled="${this.disabled}"
-          unbounded>
-        </md-ripple>
-      </span>
-    `;
-  };
-
-  private readonly getRipple = () => {
-    this.showRipple = true;
-    return this.ripple;
-  };
-
   private renderHandle() {
     const classes = {
-      'handle--big': this.icons && !this.showOnlySelectedIcon,
+      'with-icon': this.icons || (this.showOnlySelectedIcon && this.selected),
     };
     return html`
       <span class="handle-container">
-        ${when(this.showRipple, this.renderRipple)}
+        <md-ripple for="switch" ?disabled="${this.disabled}"></md-ripple>
         <span class="handle ${classMap(classes)}">
           ${this.shouldShowIcons() ? this.renderIcons() : html``}
         </span>
@@ -217,5 +208,17 @@ export class Switch extends LitElement {
     // Bubbles but does not compose to mimic native browser <input> & <select>
     // Additionally, native change event is not an InputEvent.
     this.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+
+  /** @private */
+  formResetCallback() {
+    // The selected property does not reflect, so the original attribute set by
+    // the user is used to determine the default value.
+    this.selected = this.hasAttribute('selected');
+  }
+
+  /** @private */
+  formStateRestoreCallback(state: string) {
+    this.selected = state === 'true';
   }
 }

@@ -14,19 +14,19 @@ import {Slider} from './lib/slider.js';
 export class SliderHarness extends Harness<Slider> {
   override async getInteractiveElement() {
     await this.element.updateComplete;
-    return this.element.renderRoot.querySelector<HTMLInputElement>('input.b')!;
+    return this.element.renderRoot.querySelector<HTMLInputElement>('input.end')!;
   }
 
   getInputs() {
     return [
-      this.element.renderRoot.querySelector<HTMLInputElement>('input.b')!,
-      this.element.renderRoot.querySelector<HTMLInputElement>('input.a')!
+      this.element.renderRoot.querySelector<HTMLInputElement>('input.end')!,
+      this.element.renderRoot.querySelector<HTMLInputElement>('input.start')!
     ];
   }
   getHandles() {
     return [
-      this.element.renderRoot.querySelector('.handle.b')!,
-      this.element.renderRoot.querySelector('.handle.a')!
+      this.element.renderRoot.querySelector('.handle.end')!,
+      this.element.renderRoot.querySelector('.handle.start')!
     ];
   }
 
@@ -50,8 +50,10 @@ export class SliderHarness extends Harness<Slider> {
       el = (this.getInputs())[0];
     }
     el.focus();
+    el.dispatchEvent(new Event('pointerdown', {bubbles: true, composed: true}));
     el.value = String(value);
     el.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+    el.dispatchEvent(new Event('pointerup', {bubbles: true, composed: true}));
     el.dispatchEvent(new Event('change', {bubbles: true}));
     await this.element.updateComplete;
   }

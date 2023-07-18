@@ -6,17 +6,14 @@
 
 import {html} from 'lit';
 import {customElement} from 'lit/decorators.js';
-import {createRef, ref} from 'lit/directives/ref.js';
 
 import {Environment} from '../../testing/environment.js';
 import {Harness} from '../../testing/harness.js';
-import {ripple} from '../directive.js';
 
 import {Ripple} from './ripple.js';
 
 enum RippleStateClasses {
   HOVERED = 'hovered',
-  FOCUSED = 'focused',
   PRESSED = 'pressed',
 }
 
@@ -38,12 +35,9 @@ describe('Ripple', () => {
   const env = new Environment();
 
   async function setupTest() {
-    const rippleRef = createRef<TestRipple>();
     const root = env.render(html`
-      <div ${ripple(() => rippleRef.value || null)}
-          @focusin=${() => rippleRef.value?.handleFocusin()}
-          @focusout=${() => rippleRef.value?.handleFocusout()}>
-        <test-ripple ${ref(rippleRef)}></test-ripple>
+      <div>
+        <test-ripple></test-ripple>
       </div>
     `);
 
@@ -72,7 +66,7 @@ describe('Ripple', () => {
   }
 
   describe('basic', () => {
-    it('initializes as an test-ripple', async () => {
+    it('initializes as a test-ripple', async () => {
       const {instance} = await setupTest();
       expect(instance).toBeInstanceOf(TestRipple);
     });
@@ -96,23 +90,6 @@ describe('Ripple', () => {
       await env.waitForStability();
 
       expect(surface).not.toHaveClass(RippleStateClasses.PRESSED);
-    });
-
-    it('sets focused class on focus', async () => {
-      const {harness, surface} = await setupTest();
-      await harness.focusWithKeyboard();
-      await env.waitForStability();
-
-      expect(surface).toHaveClass(RippleStateClasses.FOCUSED);
-    });
-
-    it('removes focused class on blur', async () => {
-      const {harness, surface} = await setupTest();
-      await harness.focusWithKeyboard();
-      await harness.blur();
-      await env.waitForStability();
-
-      expect(surface).not.toHaveClass(RippleStateClasses.FOCUSED);
     });
 
     it('sets hover class on pointer enter', async () => {
@@ -142,6 +119,7 @@ describe('Ripple', () => {
 
       expect(surface).not.toHaveClass(RippleStateClasses.HOVERED);
     });
+
     it('responds to keyboard click after mouse click', async () => {
       const {instance, harness} = await setupTest();
       const STATE_INACTIVE = 0;

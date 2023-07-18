@@ -6,9 +6,10 @@
 
 import {property} from 'lit/decorators.js';
 
-import {ListItemEl} from '../../../list/lib/listitem/list-item.js';
-import {ARIARole} from '../../../types/aria.js';
+import {ListItemEl, ListItemRole} from '../../../list/lib/listitem/list-item.js';
 import {CLOSE_REASON, DefaultCloseMenuEvent, isClosableKey, MenuItem} from '../shared.js';
+
+export {ListItemRole} from '../../../list/lib/listitem/list-item.js';
 
 /**
  * @fires close-menu {CloseMenuEvent}
@@ -30,7 +31,7 @@ export class MenuItemEl extends ListItemEl implements MenuItem {
    */
   protected keepOpenOnClick = false;
 
-  protected override readonly listItemRole: ARIARole = 'menuitem';
+  override readonly type: ListItemRole = 'menuitem';
 
   protected override onClick() {
     if (this.keepOpen || this.keepOpenOnClick) return;

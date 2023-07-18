@@ -9,7 +9,7 @@ import {property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {SurfacePositionTarget} from '../../menu/lib/surfacePositionController.js';
 
-import {EASING} from '../../motion/animation.js';
+import {EASING} from '../../internal/motion/animation.js';
 
 /**
  * A field component.
@@ -26,12 +26,12 @@ export class Field extends LitElement implements SurfacePositionTarget {
   /**
    * Whether or not the field has leading content.
    */
-  @property({type: Boolean}) hasStart = false;
+  @property({type: Boolean, attribute: 'has-start'}) hasStart = false;
 
   /**
    * Whether or not the field has trailing content.
    */
-  @property({type: Boolean}) hasEnd = false;
+  @property({type: Boolean, attribute: 'has-end'}) hasEnd = false;
 
   @state() private isAnimating = false;
   private labelAnimation?: Animation;

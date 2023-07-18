@@ -8,7 +8,8 @@ import {html, LitElement, PropertyValues} from 'lit';
 import {property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 
-import {EASING} from '../../motion/animation.js';
+import {Attachable, AttachableController} from '../../internal/controller/attachable-controller.js';
+import {EASING} from '../../internal/motion/animation.js';
 
 const PRESS_GROW_MS = 450;
 const MINIMUM_PRESS_MS = 225;
@@ -65,6 +66,14 @@ enum State {
 }
 
 /**
+ * Events that the ripple listens to.
+ */
+const EVENTS = [
+  'click', 'contextmenu', 'pointercancel', 'pointerdown', 'pointerenter',
+  'pointerleave', 'pointerup'
+];
+
+/**
  * Delay reacting to touch so that we do not show the ripple for a swipe or
  * scroll interaction.
  */
@@ -73,22 +82,25 @@ const TOUCH_DELAY_MS = 150;
 /**
  * A ripple component.
  */
-export class Ripple extends LitElement {
-  // TODO(https://bugs.webkit.org/show_bug.cgi?id=247546)
-  // Remove Safari workaround that requires reflecting `unbounded` so
-  // it can be styled against.
-  /**
-   * Sets the ripple to be an unbounded circle.
-   */
-  @property({type: Boolean, reflect: true}) unbounded = false;
-
+export class Ripple extends LitElement implements Attachable {
   /**
    * Disables the ripple.
    */
   @property({type: Boolean, reflect: true}) disabled = false;
 
+  get htmlFor() {
+    return this.attachableController.htmlFor;
+  }
+
+  set htmlFor(htmlFor: string|null) {
+    this.attachableController.htmlFor = htmlFor;
+  }
+
+  get control() {
+    return this.attachableController.control;
+  }
+
   @state() private hovered = false;
-  @state() private focused = false;
   @state() private pressed = false;
 
   @query('.surface') private readonly mdRoot!: HTMLElement|null;
@@ -99,7 +111,38 @@ export class Ripple extends LitElement {
   private state = State.INACTIVE;
   private rippleStartEvent?: PointerEvent;
   private checkBoundsAfterContextMenu = false;
+  private readonly attachableController =
+      new AttachableController(this, this.onControlChange.bind(this));
 
+  attach(control: HTMLElement) {
+    this.attachableController.attach(control);
+  }
+
+  detach() {
+    this.attachableController.detach();
+  }
+
+  protected override render() {
+    const classes = {
+      'hovered': this.hovered,
+      'pressed': this.pressed,
+    };
+
+    return html`<div class="surface ${classMap(classes)}"></div>`;
+  }
+
+  protected override update(changedProps: PropertyValues<this>) {
+    if (changedProps.has('disabled') && this.disabled) {
+      this.hovered = false;
+      this.pressed = false;
+    }
+    super.update(changedProps);
+  }
+
+  /**
+   * TODO(b/269799771): make private
+   * @private only public for slider
+   */
   handlePointerenter(event: PointerEvent) {
     if (!this.shouldReactToEvent(event)) {
       return;
@@ -108,6 +151,10 @@ export class Ripple extends LitElement {
     this.hovered = true;
   }
 
+  /**
+   * TODO(b/269799771): make private
+   * @private only public for slider
+   */
   handlePointerleave(event: PointerEvent) {
     if (!this.shouldReactToEvent(event)) {
       return;
@@ -121,15 +168,7 @@ export class Ripple extends LitElement {
     }
   }
 
-  handleFocusin() {
-    this.focused = true;
-  }
-
-  handleFocusout() {
-    this.focused = false;
-  }
-
-  handlePointerup(event: PointerEvent) {
+  private handlePointerup(event: PointerEvent) {
     if (!this.shouldReactToEvent(event)) {
       return;
     }
@@ -146,7 +185,7 @@ export class Ripple extends LitElement {
     }
   }
 
-  async handlePointerdown(event: PointerEvent) {
+  private async handlePointerdown(event: PointerEvent) {
     if (!this.shouldReactToEvent(event)) {
       return;
     }
@@ -181,7 +220,7 @@ export class Ripple extends LitElement {
     this.startPressAnimation(event);
   }
 
-  handleClick() {
+  private handleClick() {
     // Click is a MouseEvent in Firefox and Safari, so we cannot use
     // `shouldReactToEvent`
     if (this.disabled) {
@@ -200,7 +239,7 @@ export class Ripple extends LitElement {
     }
   }
 
-  handlePointercancel(event: PointerEvent) {
+  private handlePointercancel(event: PointerEvent) {
     if (!this.shouldReactToEvent(event)) {
       return;
     }
@@ -208,7 +247,7 @@ export class Ripple extends LitElement {
     this.endPressAnimation();
   }
 
-  handleContextmenu() {
+  private handleContextmenu() {
     if (this.disabled) {
       return;
     }
@@ -217,57 +256,25 @@ export class Ripple extends LitElement {
     this.endPressAnimation();
   }
 
-  protected override render() {
-    const classes = {
-      'hovered': this.hovered,
-      'focused': this.focused,
-      'pressed': this.pressed,
-      'unbounded': this.unbounded,
-    };
-
-    return html`<div class="surface ${classMap(classes)}"></div>`;
-  }
-
-  protected override update(changedProps: PropertyValues<this>) {
-    if (changedProps.has('disabled') && this.disabled) {
-      this.hovered = false;
-      this.focused = false;
-      this.pressed = false;
-    }
-    super.update(changedProps);
-  }
-
-  private getDimensions() {
-    return (this.parentElement ?? this).getBoundingClientRect();
-  }
-
   private determineRippleSize() {
-    const {height, width} = this.getDimensions();
+    const {height, width} = this.getBoundingClientRect();
     const maxDim = Math.max(height, width);
     const softEdgeSize =
         Math.max(SOFT_EDGE_CONTAINER_RATIO * maxDim, SOFT_EDGE_MINIMUM_SIZE);
 
-
-    let maxRadius = maxDim;
-    let initialSize = Math.floor(maxDim * INITIAL_ORIGIN_SCALE);
-
+    const initialSize = Math.floor(maxDim * INITIAL_ORIGIN_SCALE);
     const hypotenuse = Math.sqrt(width ** 2 + height ** 2);
-    maxRadius = hypotenuse + PADDING;
-
-    // ensure `initialSize` is even for unbounded
-    if (this.unbounded) {
-      initialSize = initialSize - (initialSize % 2);
-    }
+    const maxRadius = hypotenuse + PADDING;
 
     this.initialSize = initialSize;
     this.rippleScale = `${(maxRadius + softEdgeSize) / initialSize}`;
-    this.rippleSize = `${this.initialSize}px`;
+    this.rippleSize = `${initialSize}px`;
   }
 
   private getNormalizedPointerEventCoords(pointerEvent: PointerEvent):
       {x: number, y: number} {
     const {scrollX, scrollY} = window;
-    const {left, top} = this.getDimensions();
+    const {left, top} = this.getBoundingClientRect();
     const documentX = scrollX + left;
     const documentY = scrollY + top;
     const {pageX, pageY} = pointerEvent;
@@ -275,7 +282,7 @@ export class Ripple extends LitElement {
   }
 
   private getTranslationCoordinates(positionEvent?: Event) {
-    const {height, width} = this.getDimensions();
+    const {height, width} = this.getBoundingClientRect();
     // end in the center
     const endPoint = {
       x: (width - this.initialSize) / 2,
@@ -394,5 +401,41 @@ export class Ripple extends LitElement {
 
   private isTouch({pointerType}: PointerEvent) {
     return pointerType === 'touch';
+  }
+
+  /** @private */
+  async handleEvent(event: Event) {
+    switch (event.type) {
+      case 'click':
+        this.handleClick();
+        break;
+      case 'contextmenu':
+        this.handleContextmenu();
+        break;
+      case 'pointercancel':
+        this.handlePointercancel(event as PointerEvent);
+        break;
+      case 'pointerdown':
+        await this.handlePointerdown(event as PointerEvent);
+        break;
+      case 'pointerenter':
+        this.handlePointerenter(event as PointerEvent);
+        break;
+      case 'pointerleave':
+        this.handlePointerleave(event as PointerEvent);
+        break;
+      case 'pointerup':
+        this.handlePointerup(event as PointerEvent);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private onControlChange(prev: HTMLElement|null, next: HTMLElement|null) {
+    for (const event of EVENTS) {
+      prev?.removeEventListener(event, this);
+      next?.addEventListener(event, this);
+    }
   }
 }

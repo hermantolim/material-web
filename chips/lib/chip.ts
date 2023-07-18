@@ -8,11 +8,10 @@ import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
 import {html, LitElement, nothing, TemplateResult} from 'lit';
-import {property, queryAsync, state} from 'lit/decorators.js';
+import {property, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {MdRipple} from '../../ripple/ripple.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
 
 /**
  * A chip component.
@@ -22,13 +21,19 @@ export abstract class Chip extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
+  /** @nocollapse */
+  static override shadowRootOptions = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true
+  };
+
   @property({type: Boolean}) disabled = false;
   @property() label = '';
 
   /**
-   * The `id` of the action the primary focus ring is for.
+   * The `id` of the action the primary focus ring and ripple are for.
    */
-  protected abstract readonly focusFor: string;
+  protected abstract readonly primaryId: string;
 
   /**
    * Whether or not the primary ripple is disabled (defaults to `disabled`).
@@ -38,21 +43,21 @@ export abstract class Chip extends LitElement {
     return this.disabled;
   }
 
-  @state() private showRipple = false;
-  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
+  /**
+   * The aria role of the container. Defaults to `row` for grid chip sets.
+   * Listbox chip sets should remove this since they do not contain cells.
+   */
+  @state() protected containerRole?: 'row' = 'row';
 
   protected override render() {
-    const ripple = this.showRipple ?
-        html`<md-ripple ?disabled=${this.rippleDisabled}></md-ripple>` :
-        nothing;
-
     return html`
-      <div class="container ${classMap(this.getContainerClasses())}">
+      <div class="container ${classMap(this.getContainerClasses())}"
+          role=${this.containerRole || nothing}>
         ${this.renderOutline()}
-        <md-focus-ring for=${this.focusFor}></md-focus-ring>
-        ${ripple}
-        ${this.renderPrimaryAction()}
-        ${this.renderTrailingAction?.() || nothing}
+        <md-focus-ring for=${this.primaryId}></md-focus-ring>
+        <md-ripple for=${this.primaryId}
+          ?disabled=${this.rippleDisabled}></md-ripple>
+        ${this.renderActions()}
       </div>
     `;
   }
@@ -63,19 +68,30 @@ export abstract class Chip extends LitElement {
     };
   }
 
+  protected renderActions() {
+    return this.renderActionCell(this.renderAction());
+  }
+
+  protected renderActionCell(content: TemplateResult|
+                             typeof nothing): TemplateResult|typeof nothing {
+    if (content === nothing) {
+      return content;
+    }
+
+    return html`<div class="cell" role="cell">${content}</div>`;
+  }
+
+  protected abstract renderAction(): TemplateResult;
+
   protected renderContent() {
     return html`
-      <span class="leading icon">
+      <span class="leading icon" aria-hidden="true">
         ${this.renderLeadingIcon()}
       </span>
       <span class="label">${this.label}</span>
       <span class="touch"></span>
     `;
   }
-
-  protected abstract renderPrimaryAction(): TemplateResult;
-
-  protected renderTrailingAction?(): TemplateResult|typeof nothing;
 
   protected renderOutline() {
     return html`<span class="outline"></span>`;
@@ -84,9 +100,4 @@ export abstract class Chip extends LitElement {
   protected renderLeadingIcon(): TemplateResult {
     return html`<slot name="icon"></slot>`;
   }
-
-  protected getRipple = () => {
-    this.showRipple = true;
-    return this.ripple;
-  };
 }

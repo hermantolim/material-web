@@ -1,27 +1,22 @@
 # Material Web
 
-> IMPORTANT: Material Web is a work in progress and subject to major changes
-> until 1.0 release.
-
 Material Web is Google’s UI toolkit for building beautiful, accessible web
-applications. Material Web is implemented as a collection of
+applications.
+
+Material Web is implemented as a collection of
 [web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components).
 [Material 3](https://m3.material.io/) is the latest version of Google’s
 open-source design system.
 
-> Note: Looking for Material 2? `<mwc-*` components are now on the
-> [`mwc` branch](https://github.com/material-components/material-web/tree/mwc).
-
-## Links
-
-- [Quick start](docs/quick-start.md)
+> Tip: Check out the [quick start guide](docs/quick-start.md) to jump in.
 
 ## Roadmap
 
 **Alpha** components are in-development and may have many frequent breaking
 changes.
 
-**Beta** components are mostly polished and ready for use.
+**Beta** components are mostly polished and ready for use, but may still have
+breaking changes.
 
 **Stable** components are reviewed, documented, and API complete.
 
@@ -29,7 +24,7 @@ changes.
 -   🟡 In progress
 -   ✅ Complete
 
-### 1.0 Components
+### `v1.0.0` (2023)
 
 Component                     | Alpha | Beta | Stable
 ----------------------------- | :---: | :--: | :----:
@@ -37,11 +32,11 @@ Button                        | ✅     | ✅    | ❌
 FAB                           | ✅     | ✅    | ❌
 Icon button                   | ✅     | ✅    | ❌
 Checkbox                      | ✅     | ✅    | ❌
-Chips                         | 🟡     | ❌    | ❌
+Chips                         | ✅     | ✅    | ❌
 Dialog                        | ✅     | ✅    | ❌
-Divider                       | ✅     | ✅    | 🟡
+Divider                       | ✅     | ✅    | ✅
 Elevation                     | ✅     | ✅    | ✅
-Focus ring                    | ✅     | ✅    | 🟡
+Focus ring                    | ✅     | ✅    | ✅
 Field                         | ✅     | ✅    | 🟡
 Icon                          | ✅     | ✅    | ❌
 List                          | ✅     | ✅    | ❌
@@ -49,16 +44,16 @@ Menu                          | ✅     | ✅    | ❌
 Progress indicator (circular) | ✅     | ✅    | 🟡
 Progress indicator (linear)   | ✅     | ✅    | 🟡
 Radio button                  | ✅     | ✅    | ❌
-Ripple                        | ✅     | ✅    | 🟡
+Ripple                        | ✅     | ✅    | ✅
 Select                        | ✅     | ✅    | ❌
 Slider                        | ✅     | ✅    | ❌
 Switch                        | ✅     | ✅    | ❌
-Tabs                          | ✅     | 🟡    | ❌
+Tabs                          | ✅     | ✅    | ❌
 Text field                    | ✅     | ✅    | 🟡
 
-### 1.1+ Components
+### Future
 
-These components are planned for release after 1.0.
+These features are planned for a future release.
 
 Component         | Alpha | Beta | Stable
 ----------------- | :---: | :--: | :----:
@@ -79,3 +74,20 @@ Snackbar          | ❌     | ❌    | ❌
 Time picker       | ❌     | ❌    | ❌
 Tooltip           | ❌     | ❌    | ❌
 Top app bar       | ❌     | ❌    | ❌
+
+## Browser support
+
+This project aims to support the latest two major versions of browsers at the
+time of each release.
+
+Current browsers and versions supported:
+
+Browser | Version
+------- | -------
+Chrome  | 112 +
+Edge    | 112 +
+Firefox | 113 +
+Safari* | 16.4 +
+
+*\* previous versions of Safari may be supported with an
+[`ElementInternals` polyfill](https://www.npmjs.com/package/element-internals-polyfill).*

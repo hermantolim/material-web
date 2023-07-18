@@ -51,13 +51,10 @@
 
     @include ripple.theme(
       (
-        focus-color: var(--_unselected-focus-state-layer-color),
-        focus-opacity: var(--_unselected-focus-state-layer-opacity),
         hover-color: var(--_unselected-hover-state-layer-color),
         hover-opacity: var(--_unselected-hover-state-layer-opacity),
         pressed-color: var(--_unselected-pressed-state-layer-color),
         pressed-opacity: var(--_unselected-pressed-state-layer-opacity),
-        shape: var(--_state-layer-shape),
       )
     );
 
@@ -76,6 +73,10 @@
     &:disabled {
       color: var(--_disabled-icon-color);
     }
+  }
+
+  md-ripple {
+    border-radius: var(--_state-layer-shape);
   }
 
   .standard:disabled .icon {
@@ -101,8 +102,6 @@
 
     @include ripple.theme(
       (
-        focus-color: var(--_selected-focus-state-layer-color),
-        focus-opacity: var(--_selected-focus-state-layer-opacity),
         hover-color: var(--_selected-hover-state-layer-color),
         hover-opacity: var(--_selected-hover-state-layer-opacity),
         pressed-color: var(--_selected-pressed-state-layer-color),

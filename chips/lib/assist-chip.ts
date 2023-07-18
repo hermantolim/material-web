@@ -9,8 +9,7 @@ import '../../elevation/elevation.js';
 import {html, nothing} from 'lit';
 import {property} from 'lit/decorators.js';
 
-import {ripple} from '../../ripple/directive.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
 
 import {Chip} from './chip.js';
 
@@ -22,7 +21,7 @@ export class AssistChip extends Chip {
   @property() href = '';
   @property() target: '_blank'|'_parent'|'_self'|'_top'|'' = '';
 
-  protected get focusFor() {
+  protected get primaryId() {
     return this.href ? 'link' : 'button';
   }
 
@@ -37,10 +36,11 @@ export class AssistChip extends Chip {
       // Link chips cannot be disabled
       disabled: !this.href && this.disabled,
       elevated: this.elevated,
+      link: !!this.href,
     };
   }
 
-  protected override renderPrimaryAction() {
+  protected override renderAction() {
     const {ariaLabel} = this as ARIAMixinStrict;
     if (this.href) {
       return html`
@@ -49,7 +49,6 @@ export class AssistChip extends Chip {
           aria-label=${ariaLabel || nothing}
           href=${this.href}
           target=${this.target || nothing}
-          ${ripple(this.getRipple)}
         >${this.renderContent()}</a>
       `;
     }
@@ -60,7 +59,6 @@ export class AssistChip extends Chip {
         aria-label=${ariaLabel || nothing}
         ?disabled=${this.disabled}
         type="button"
-        ${ripple(this.getRipple)}
       >${this.renderContent()}</button>
     `;
   }

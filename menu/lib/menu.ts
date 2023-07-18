@@ -13,12 +13,12 @@ import {eventOptions, property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {styleMap} from 'lit/directives/style-map.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
+import {ARIAMixinStrict, ARIARole} from '../../internal/aria/aria.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
+import {createAnimationSignal, EASING} from '../../internal/motion/animation.js';
 import {List} from '../../list/lib/list.js';
-import {createAnimationSignal, EASING} from '../../motion/animation.js';
-import {ARIAMixinStrict, ARIARole} from '../../types/aria.js';
 
-import {ActivateTypeaheadEvent, DeactivateTypeaheadEvent, isElementInSubtree, MenuItem} from './shared.js';
+import {ActivateTypeaheadEvent, DeactivateTypeaheadEvent, isClosableKey, isElementInSubtree, MenuItem} from './shared.js';
 import {Corner, SurfacePositionController, SurfacePositionTarget} from './surfacePositionController.js';
 import {TypeaheadController} from './typeaheadController.js';
 
@@ -122,7 +122,7 @@ export abstract class Menu extends LitElement {
   /**
    * The tabindex of the underlying list element.
    */
-  @property({type: Number, attribute: 'list-tab-index'}) listTabIndex = 0;
+  @property({type: Number, attribute: 'list-tabindex'}) listTabIndex = 0;
   /**
    * The role of the underlying list element.
    */
@@ -132,7 +132,7 @@ export abstract class Menu extends LitElement {
    * it clears the typeahead buffer.
    */
   @property({type: Number, attribute: 'typeahead-delay'})
-  typeaheadBufferTime = DEFAULT_TYPEAHEAD_BUFFER_TIME;
+  typeaheadDelay = DEFAULT_TYPEAHEAD_BUFFER_TIME;
   /**
    * The corner of the anchor which to align the menu in the standard logical
    * property style of <block>_<inline>.
@@ -195,7 +195,7 @@ export abstract class Menu extends LitElement {
   typeaheadController = new TypeaheadController(() => {
     return {
       getItems: () => this.items,
-      typeaheadBufferTime: this.typeaheadBufferTime,
+      typeaheadBufferTime: this.typeaheadDelay,
       active: this.typeaheadActive
     };
   });
@@ -340,6 +340,12 @@ export abstract class Menu extends LitElement {
   // and we don't want the menu item to close the menu.
   @eventOptions({capture: true})
   private handleListKeydown(e: KeyboardEvent) {
+    if (e.target === this.listElement && !e.defaultPrevented &&
+        isClosableKey(e.code)) {
+      e.preventDefault();
+      this.close();
+    }
+
     this.typeaheadController.onKeydown(e);
   }
 
@@ -538,7 +544,7 @@ export abstract class Menu extends LitElement {
     const SURFACE_OPACITY_DELAY = FULL_DURATION - SURFACE_OPACITY_DURATION;
     const ITEM_OPACITY_DURATION = 50;
     const ITEM_OPACITY_INITIAL_DELAY = 50;
-    const END_HEIGHT_PRECENTAGE = .35;
+    const END_HEIGHT_PERCENTAGE = .35;
 
     // We want to fit every child fade-out animation within the full duration of
     // the animation.
@@ -550,7 +556,7 @@ export abstract class Menu extends LitElement {
     const surfaceHeightAnimation = surfaceEl.animate(
         [
           {height: `${height}px`},
-          {height: `${height * END_HEIGHT_PRECENTAGE}px`}
+          {height: `${height * END_HEIGHT_PERCENTAGE}px`}
         ],
         {
           duration: FULL_DURATION,
@@ -564,7 +570,7 @@ export abstract class Menu extends LitElement {
         [
           {transform: ''}, {
             transform: closingDownwards ?
-                `translateY(-${height * (1 - END_HEIGHT_PRECENTAGE)}px)` :
+                `translateY(-${height * (1 - END_HEIGHT_PERCENTAGE)}px)` :
                 ''
           }
         ],
@@ -665,12 +671,12 @@ export abstract class Menu extends LitElement {
     this.typeaheadActive = true;
   }
 
-  private handleStayOpenOnFocusout(e:Event) {
+  private handleStayOpenOnFocusout(e: Event) {
     e.stopPropagation();
     this.stayOpenOnFocusout = true;
   }
 
-  private handleCloseOnFocusout(e:Event) {
+  private handleCloseOnFocusout(e: Event) {
     e.stopPropagation();
     this.stayOpenOnFocusout = false;
   }
@@ -688,5 +694,25 @@ export abstract class Menu extends LitElement {
 
   show() {
     this.open = true;
+  }
+
+  /**
+   * Activates the next item in the menu. If at the end of the menu, the first
+   * item will be activated.
+   *
+   * @return The activated menu item or `null` if there are no items.
+   */
+  activateNextItem() {
+    return this.listElement?.activateNextItem() as MenuItem ?? null;
+  }
+
+  /**
+   * Activates the previous item in the menu. If at the start of the menu, the
+   * last item will be activated.
+   *
+   * @return The activated menu item or `null` if there are no items.
+   */
+  activatePreviousItem() {
+    return this.listElement?.activatePreviousItem() as MenuItem ?? null;
   }
 }

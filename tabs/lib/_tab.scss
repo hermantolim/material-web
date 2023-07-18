@@ -9,9 +9,9 @@
 // go/keep-sorted start
 @use '../../elevation/elevation';
 @use '../../focus/focus-ring';
+@use '../../internal/sass/string-ext';
+@use '../../internal/sass/theme';
 @use '../../ripple/ripple';
-@use '../../sass/string-ext';
-@use '../../sass/theme';
 @use '../../tokens';
 // go/keep-sorted end
 
@@ -43,8 +43,6 @@
 
     @include ripple.theme(
       (
-        focus-color: var(--_focus-state-layer-color),
-        focus-opacity: var(--_focus-state-layer-opacity),
         hover-color: var(--_hover-state-layer-color),
         hover-opacity: var(--_hover-state-layer-opacity),
         pressed-color: var(--_pressed-state-layer-color),
@@ -54,10 +52,13 @@
 
     @include focus-ring.theme(
       (
-        shape: 8px,
-        offset: -7px,
+        'shape': 8px,
       )
     );
+  }
+
+  :host([selected]) md-focus-ring {
+    margin-bottom: calc(var(--_active-indicator-height) + 1px);
   }
 
   .button {
@@ -110,11 +111,12 @@
     align-items: center;
     justify-content: center;
 
-    // TODO (b/261201556) replace with spacing token
     $_content-padding: 8px;
     // tabs are naturally sized up to their max height.
     max-height: calc(var(--_container-height) + 2 * $_content-padding);
-    padding: $_content-padding;
+    // min-height of touch target
+    min-height: 48px;
+    padding: $_content-padding calc(2 * $_content-padding);
     gap: 4px;
   }
 
@@ -187,8 +189,6 @@
 
     @include ripple.theme(
       (
-        focus-color: var(--_active-focus-state-layer-color),
-        focus-opacity: var(--_active-focus-state-layer-opacity),
         hover-color: var(--_active-hover-state-layer-color),
         hover-opacity: var(--_active-hover-state-layer-opacity),
         pressed-color: var(--_active-pressed-state-layer-color),
@@ -226,13 +226,10 @@
     color: var(--_active-pressed-icon-color);
   }
 
-  // TODO (b/261201556) implement disabled and high contrast mode
-  // styling in beta version.
   // disabled state
   :host([disabled]) {
     cursor: default;
     pointer-events: none;
-    // TODO (b/261201556) implement disabled styling in beta version.
     opacity: 0.38;
   }
 
@@ -285,5 +282,12 @@
   :host,
   ::slotted(*) {
     white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    :host,
+    :host([variant]) {
+      --_active-indicator-color: CanvasText;
+    }
   }
 }

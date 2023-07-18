@@ -10,7 +10,7 @@
 // go/keep-sorted end
 // go/keep-sorted start
 @use '../../elevation/lib/elevation';
-@use '../../sass/theme';
+@use '../../internal/sass/theme';
 @use '../../tokens';
 // go/keep-sorted end
 
@@ -30,8 +30,16 @@
   }
 
   .field,
-  .select {
+  .select,
+  md-menu {
     min-width: inherit;
+    width: inherit;
+    max-width: inherit;
+  }
+
+  .field,
+  .select {
+    width: 100%;
   }
 
   :host {

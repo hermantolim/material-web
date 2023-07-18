@@ -6,29 +6,35 @@
 
 import '../../elevation/elevation.js';
 
-import {html, nothing, PropertyValues, svg} from 'lit';
-import {property} from 'lit/decorators.js';
+import {html, nothing, PropertyValues, svg, TemplateResult} from 'lit';
+import {property, query} from 'lit/decorators.js';
 
-import {ripple} from '../../ripple/directive.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
 
-import {Chip} from './chip.js';
-import {renderRemoveButton} from './trailing-actions.js';
+import {MultiActionChip} from './multi-action-chip.js';
+import {renderRemoveButton} from './trailing-icons.js';
 
 /**
  * A filter chip component.
  */
-export class FilterChip extends Chip {
+export class FilterChip extends MultiActionChip {
   @property({type: Boolean}) elevated = false;
   @property({type: Boolean}) removable = false;
   @property({type: Boolean}) selected = false;
 
-  protected get focusFor() {
+  protected get primaryId() {
     return 'option';
   }
 
+  @query('.primary.action') protected readonly primaryAction!: HTMLElement|null;
+  @query('.trailing.action')
+  protected readonly trailingAction!: HTMLElement|null;
+
   constructor() {
     super();
+    // Remove the `row` role from the container, since filter chips do not use a
+    // `grid` navigation model.
+    this.containerRole = undefined;
     this.addEventListener('click', () => {
       if (this.disabled) {
         return;
@@ -38,11 +44,10 @@ export class FilterChip extends Chip {
     });
   }
 
-  protected override updated(changedProperties: PropertyValues<FilterChip>) {
-    if (changedProperties.has('selected') &&
-        changedProperties.get('selected') !== undefined) {
+  protected override updated(changed: PropertyValues<this>) {
+    if (changed.has('selected') && changed.get('selected') !== undefined) {
       // Dispatch when `selected` changes, except for the first update.
-      this.dispatchEvent(new Event('change', {bubbles: true}));
+      this.dispatchEvent(new Event('selected', {bubbles: true}));
     }
   }
 
@@ -51,10 +56,17 @@ export class FilterChip extends Chip {
       ...super.getContainerClasses(),
       elevated: this.elevated,
       selected: this.selected,
+      'has-trailing': this.removable,
     };
   }
 
-  protected override renderPrimaryAction() {
+  protected override renderActionCell(content: TemplateResult|typeof nothing) {
+    // Filter chips use a `listbox`/`option` model, and do not need `gridcell`
+    // wrappers around their actions.
+    return content;
+  }
+
+  protected override renderAction() {
     const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       <button class="primary action"
@@ -63,7 +75,6 @@ export class FilterChip extends Chip {
         aria-selected=${this.selected}
         ?disabled=${this.disabled || nothing}
         role="option"
-        ${ripple(this.getRipple)}
       >${this.renderContent()}</button>
     `;
   }
@@ -82,7 +93,8 @@ export class FilterChip extends Chip {
 
   protected override renderTrailingAction() {
     if (this.removable) {
-      return renderRemoveButton({disabled: this.disabled});
+      return renderRemoveButton(
+          {ariaLabel: this.ariaLabelRemove, disabled: this.disabled});
     }
 
     return nothing;

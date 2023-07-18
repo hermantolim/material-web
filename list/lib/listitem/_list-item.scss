@@ -10,9 +10,8 @@
 // go/keep-sorted start
 @use '../../../focus/focus-ring';
 @use '../../../icon/icon';
+@use '../../../internal/sass/theme';
 @use '../../../ripple/ripple';
-@use '../../../sass/map-ext';
-@use '../../../sass/theme';
 @use '../../../tokens';
 // go/keep-sorted end
 
@@ -48,8 +47,7 @@
 
     @include focus-ring.theme(
       (
-        'offset': -3px,
-        'shape': map.get(tokens.md-sys-shape-values(), 'corner-extra-small'),
+        'shape': 8px,
       )
     );
     @include ripple.theme(
@@ -58,8 +56,6 @@
         hover-opacity: var(--_list-item-hover-state-layer-opacity),
         pressed-color: var(--_list-item-pressed-state-layer-color),
         pressed-opacity: var(--_list-item-pressed-state-layer-opacity),
-        focus-color: var(--_list-item-focus-state-layer-color),
-        focus-opacity: var(--_list-item-focus-state-layer-opacity),
       )
     );
   }
@@ -77,7 +73,7 @@
     // hide android tap color since we have ripple
     -webkit-tap-highlight-color: transparent;
 
-    &:not(.disabled) {
+    &:not(.disabled):not(.noninteractive) {
       cursor: pointer;
     }
 
@@ -161,6 +157,9 @@
 
   .label-text {
     display: flex;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    white-space: nowrap;
     color: var(--_list-item-label-text-color);
     font: var(--_list-item-label-text-type);
 

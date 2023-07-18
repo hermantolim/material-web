@@ -8,16 +8,13 @@ import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
 import {html, isServer, LitElement, nothing, TemplateResult} from 'lit';
-import {property, query, queryAssignedElements, queryAsync, state} from 'lit/decorators.js';
+import {property, query, queryAssignedElements} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
-import {when} from 'lit/directives/when.js';
 import {html as staticHtml, literal} from 'lit/static-html.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {dispatchActivationClick, isActivationClick} from '../../controller/events.js';
-import {ripple} from '../../ripple/directive.js';
-import {MdRipple} from '../../ripple/ripple.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
+import {dispatchActivationClick, isActivationClick, redispatchEvent} from '../../internal/controller/events.js';
 
 /**
  * A button component.
@@ -27,6 +24,12 @@ export abstract class Button extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
+  /** @nocollapse */
+  static get formAssociated() {
+    return true;
+  }
+
+  /** @nocollapse */
   static override shadowRootOptions:
       ShadowRootInit = {mode: 'open', delegatesFocus: true};
 
@@ -52,28 +55,30 @@ export abstract class Button extends LitElement {
    *
    * _Note:_ Link buttons cannot have trailing icons.
    */
-  @property({type: Boolean, attribute: 'trailingicon'}) trailingIcon = false;
+  @property({type: Boolean, attribute: 'trailing-icon'}) trailingIcon = false;
 
   /**
    * Whether to display the icon or not.
    */
-  @property({type: Boolean}) hasIcon = false;
+  @property({type: Boolean, attribute: 'has-icon'}) hasIcon = false;
 
   /**
-   * Whether `preventDefault()` should be called on the underlying button.
-   * Useful for preventing certain native functionalities like preventing form
-   * submissions.
+   * Specifies the type of button, used for controlling forms. When type
+   * is `submit`, the containing form is submitted; when it is `reset` the
+   * form is reset.
    */
-  @property({type: Boolean}) preventClickDefault = false;
+  @property() type: ''|'submit'|'reset' = '';
 
   @query('.md3-button') private readonly buttonElement!: HTMLElement|null;
 
-  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
-
-  @state() private showRipple = false;
-
   @queryAssignedElements({slot: 'icon', flatten: true})
   private readonly assignedIcons!: HTMLElement[];
+
+  private readonly internals =
+      (this as HTMLElement /* needed for closure */).attachInternals();
+
+  // flag to avoid processing redispatched event.
+  private isRedispatchingEvent = false;
 
   constructor() {
     super();
@@ -107,11 +112,10 @@ export abstract class Button extends LitElement {
         href=${this.href || nothing}
         target=${this.target || nothing}
         @click="${this.handleClick}"
-        ${ripple(this.getRipple)}
       >
         ${this.renderFocusRing()}
         ${this.renderElevation()}
-        ${when(this.showRipple, this.renderRipple)}
+        ${this.renderRipple()}
         ${this.renderOutline()}
         ${this.renderTouchTarget()}
         ${this.renderLeadingIcon()}
@@ -149,15 +153,10 @@ export abstract class Button extends LitElement {
     dispatchActivationClick(this.buttonElement);
   };
 
-  private readonly getRipple = () => {
-    this.showRipple = true;
-    return this.ripple;
-  };
-
-  private readonly renderRipple = () => {
+  private renderRipple() {
     return html`<md-ripple class="md3-button__ripple" ?disabled="${
         this.disabled}"></md-ripple>`;
-  };
+  }
 
   private renderFocusRing() {
     return html`<md-focus-ring></md-focus-ring>`;
@@ -181,8 +180,29 @@ export abstract class Button extends LitElement {
   }
 
   private handleClick(e: MouseEvent) {
-    if (this.preventClickDefault) {
-      e.preventDefault();
+    if (this.isRedispatchingEvent) {
+      return;
+    }
+    // based on type, trigger form action.
+    const {type, internals: {form}} = this;
+    if (!form) {
+      return;
+    }
+    const isSubmit = type === 'submit', isReset = type === 'reset';
+    if (!(isSubmit || isReset)) {
+      return;
+    }
+    e.stopPropagation();
+    this.isRedispatchingEvent = true;
+    const prevented = !redispatchEvent(this, e);
+    this.isRedispatchingEvent = false;
+    if (prevented) {
+      return;
+    }
+    if (isSubmit) {
+      form.requestSubmit();
+    } else if (isReset) {
+      form.reset();
     }
   }
 

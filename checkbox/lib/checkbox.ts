@@ -8,17 +8,12 @@ import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
 import {html, isServer, LitElement, nothing, PropertyValues} from 'lit';
-import {property, query, queryAsync, state} from 'lit/decorators.js';
+import {property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
-import {when} from 'lit/directives/when.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {dispatchActivationClick, isActivationClick, redispatchEvent} from '../../controller/events.js';
-import {FormController, getFormValue} from '../../controller/form-controller.js';
-import {stringConverter} from '../../controller/string-converter.js';
-import {ripple} from '../../ripple/directive.js';
-import {MdRipple} from '../../ripple/ripple.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
+import {dispatchActivationClick, isActivationClick, redispatchEvent} from '../../internal/controller/events.js';
 
 /**
  * A checkbox component.
@@ -28,15 +23,13 @@ export class Checkbox extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
-  /**
-   * @nocollapse
-   */
+  /** @nocollapse */
   static formAssociated = true;
 
   /**
    * Whether or not the checkbox is selected.
    */
-  @property({type: Boolean, reflect: true}) checked = false;
+  @property({type: Boolean}) checked = false;
 
   /**
    * Whether or not the checkbox is disabled.
@@ -46,14 +39,14 @@ export class Checkbox extends LitElement {
   /**
    * Whether or not the checkbox is invalid.
    */
-  @property({type: Boolean, reflect: true}) error = false;
+  @property({type: Boolean}) error = false;
 
   /**
    * Whether or not the checkbox is indeterminate.
    *
    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#indeterminate_state_checkboxes
    */
-  @property({type: Boolean, reflect: true}) indeterminate = false;
+  @property({type: Boolean}) indeterminate = false;
 
   /**
    * The value of the checkbox that is submitted with a form when selected.
@@ -65,25 +58,36 @@ export class Checkbox extends LitElement {
   /**
    * The HTML name to use in form submission.
    */
-  @property({reflect: true, converter: stringConverter}) name = '';
+  get name() {
+    return this.getAttribute('name') ?? '';
+  }
+  set name(name: string) {
+    this.setAttribute('name', name);
+  }
 
   /**
    * The associated form element with which this element's value will submit.
    */
   get form() {
-    return this.closest('form');
+    return this.internals.form;
+  }
+
+  /**
+   * The labels this element is associated with.
+   */
+  get labels() {
+    return this.internals.labels;
   }
 
   @state() private prevChecked = false;
   @state() private prevDisabled = false;
   @state() private prevIndeterminate = false;
-  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
   @query('input') private readonly input!: HTMLInputElement|null;
-  @state() private showRipple = false;
+  private readonly internals =
+      (this as HTMLElement /* needed for closure */).attachInternals();
 
   constructor() {
     super();
-    this.addController(new FormController(this));
     if (!isServer) {
       this.addEventListener('click', (event: MouseEvent) => {
         if (!isActivationClick(event)) {
@@ -99,10 +103,6 @@ export class Checkbox extends LitElement {
     this.input?.focus();
   }
 
-  [getFormValue]() {
-    return this.checked ? this.value : null;
-  }
-
   protected override update(changed: PropertyValues<Checkbox>) {
     if (changed.has('checked') || changed.has('disabled') ||
         changed.has('indeterminate')) {
@@ -112,6 +112,9 @@ export class Checkbox extends LitElement {
           changed.get('indeterminate') ?? this.indeterminate;
     }
 
+    const shouldAddFormValue = this.checked && !this.indeterminate;
+    const state = String(this.checked);
+    this.internals.setFormValue(shouldAddFormValue ? this.value : null, state);
     super.update(changed);
   }
 
@@ -141,7 +144,7 @@ export class Checkbox extends LitElement {
         <div class="outline"></div>
         <div class="background"></div>
         <md-focus-ring for="input"></md-focus-ring>
-        ${when(this.showRipple, this.renderRipple)}
+        <md-ripple for="input" ?disabled=${this.disabled}></md-ripple>
         <svg class="icon" viewBox="0 0 18 18">
           <rect class="mark short" />
           <rect class="mark long" />
@@ -155,7 +158,6 @@ export class Checkbox extends LitElement {
         .indeterminate=${this.indeterminate}
         .checked=${this.checked}
         @change=${this.handleChange}
-        ${ripple(this.getRipple)}
       >
     `;
   }
@@ -168,12 +170,15 @@ export class Checkbox extends LitElement {
     redispatchEvent(this, event);
   }
 
-  private readonly getRipple = () => {  // bind to this
-    this.showRipple = true;
-    return this.ripple;
-  };
+  /** @private */
+  formResetCallback() {
+    // The checked property does not reflect, so the original attribute set by
+    // the user is used to determine the default value.
+    this.checked = this.hasAttribute('checked');
+  }
 
-  private readonly renderRipple = () => {  // bind to this
-    return html`<md-ripple ?disabled=${this.disabled} unbounded></md-ripple>`;
-  };
+  /** @private */
+  formStateRestoreCallback(state: string) {
+    this.checked = state === 'true';
+  }
 }

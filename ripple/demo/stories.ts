@@ -7,44 +7,80 @@
 import '@material/web/ripple/ripple.js';
 
 import {MaterialStoryInit} from './material-collection.js';
-import {ripple} from '@material/web/ripple/directive.js';
-import {MdRipple} from '@material/web/ripple/ripple.js';
 import {css, html} from 'lit';
-import {createRef, ref} from 'lit/directives/ref.js';
 
 /** Knob types for ripple stories. */
 export interface StoryKnobs {
-  disabled: boolean;
-  unbounded: boolean;
   '--md-ripple-pressed-color': string;
   '--md-ripple-pressed-opacity': number;
   '--md-ripple-hover-color': string;
   '--md-ripple-hover-opacity': number;
 }
 
-const standard: MaterialStoryInit<StoryKnobs> = {
-  name: 'Ripple',
+const ripples: MaterialStoryInit<StoryKnobs> = {
+  name: 'Ripples',
   styles: css`
-    .root {
-      border: 2px solid black;
-      box-sizing: border-box;
-      height: 100px;
-      width: 100px;
+    .row {
+      align-items: center;
+      display: flex;
+      gap: 32px;
+    }
+
+    .container {
+      align-items: center;
+      border-radius: 24px;
+      display: flex;
+      height: 64px;
+      justify-content: center;
+      outline: 1px solid var(--md-sys-color-outline);
+      padding: 16px;
+      position: relative;
+      width: 64px;
+    }
+
+    .container:has(.unbounded) {
+      border-radius: 50%;
+      outline-style: dashed;
+    }
+
+    .anchor {
+      background: var(--md-sys-color-primary-container);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: 50%;
+      height: 24px;
+      width: 24px;
+
+      /* Recommended styles for an unbounded ripple's anchor. */
+      display: grid;
+      place-items: center;
       position: relative;
     }
+
+    md-ripple.unbounded {
+      height: 64px;
+      width: 64px;
+
+      /* Recommended styles for an unbounded ripple. */
+      border-radius: 50%;
+      inset: unset;
+    }
   `,
-  render({disabled, unbounded}) {
-    const rippleRef = createRef<MdRipple>();
+  render() {
     return html`
-      <div class="root" ${ripple(() => rippleRef.value || null)}>
-        <md-ripple
-          ?disabled=${disabled}
-          ?unbounded=${unbounded}
-          ${ref(rippleRef)}></md-ripple>
+      <div class="row">
+        <div class="container">
+          <md-ripple></md-ripple>
+        </div>
+
+        <div class="container" id="touch">
+          <div class="anchor">
+            <md-ripple for="touch" class="unbounded"></md-ripple>
+          </div>
+        </div>
       </div>
     `;
   }
 };
 
 /** Ripple stories. */
-export const stories = [standard];
+export const stories = [ripples];

@@ -9,14 +9,11 @@ import '../../focus/focus-ring.js';
 import '../../ripple/ripple.js';
 
 import {html, LitElement, nothing} from 'lit';
-import {property, queryAsync, state} from 'lit/decorators.js';
+import {property} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
-import {when} from 'lit/directives/when.js';
 
-import {requestUpdateOnAriaChange} from '../../aria/delegate.js';
-import {ripple} from '../../ripple/directive.js';
-import {MdRipple} from '../../ripple/ripple.js';
-import {ARIAMixinStrict} from '../../types/aria.js';
+import {ARIAMixinStrict} from '../../internal/aria/aria.js';
+import {requestUpdateOnAriaChange} from '../../internal/aria/delegate.js';
 
 /**
  * Sizes variants available to non-extended FABs.
@@ -29,6 +26,7 @@ export abstract class SharedFab extends LitElement {
     requestUpdateOnAriaChange(this);
   }
 
+  /** @nocollapse */
   static override shadowRootOptions: ShadowRootInit = {
     mode: 'open' as const,
     delegatesFocus: true,
@@ -54,34 +52,35 @@ export abstract class SharedFab extends LitElement {
   @property({type: Boolean}) lowered = false;
 
   /**
+   * NOTE: For SSR use only as it will be overriden by icon slotchange event.
+   *
+   * Whether to display the icon or not in extended FAB. Does nothing on branded
+   * and non-extended FABs.
+   */
+  @property({type: Boolean, attribute: 'has-icon'}) hasIcon = false;
+
+  /**
    * Lowers the FAB's elevation and places it into the `lowered` state.
    */
-  @property({type: Boolean}) reducedTouchTarget = false;
-
-  @state() private showRipple = false;
-
-  @queryAsync('md-ripple') private readonly ripple!: Promise<MdRipple|null>;
-
-  private readonly getRipple = () => {
-    this.showRipple = true;
-    return this.ripple;
-  };
+  @property({type: Boolean, attribute: 'reduced-touch-target'})
+  reducedTouchTarget = false;
 
   protected override render() {
     // Needed for closure conformance
     const {ariaLabel} = this as ARIAMixinStrict;
     return html`
       <button
-          class="fab ${classMap(this.getRenderClasses())}"
-          aria-label=${ariaLabel || nothing}
-          ${ripple(this.getRipple)}>
+        class="fab ${classMap(this.getRenderClasses())}"
+        aria-label=${ariaLabel || nothing}
+      >
         <md-elevation></md-elevation>
         <md-focus-ring></md-focus-ring>
-        ${when(this.showRipple, this.renderRipple)}
+        <md-ripple class="ripple"></md-ripple>
         ${this.renderTouchTarget()}
         ${this.renderIcon()}
         ${this.renderLabel()}
-      </button>`;
+      </button>
+    `;
   }
 
   protected getRenderClasses() {
@@ -91,6 +90,7 @@ export abstract class SharedFab extends LitElement {
       'small': this.size === 'small' && !isExtended,
       'large': this.size === 'large' && !isExtended,
       'extended': isExtended,
+      'hasIcon': !isExtended || this.hasIcon,
     };
   }
 
@@ -105,11 +105,13 @@ export abstract class SharedFab extends LitElement {
 
   private renderIcon() {
     return html`<span class="icon">
-        <slot name="icon"></slot>
+        <slot name="icon" @slotchange=${this.onSlotchange}></slot>
       </span>`;
   }
 
-  private readonly renderRipple = () => {
-    return html`<md-ripple class="ripple"></md-ripple>`;
-  };
+  private onSlotchange(e: Event) {
+    const slotEl = e.target as HTMLSlotElement;
+    const slottedEls = slotEl.assignedElements({flatten: true});
+    this.hasIcon = slottedEls.length !== 0;
+  }
 }
